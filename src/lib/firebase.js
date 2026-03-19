@@ -6,7 +6,13 @@ import {
   writeBatch, serverTimestamp, runTransaction, setDoc,
 } from 'firebase/firestore'
 import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
 } from 'firebase/auth'
 
 const firebaseConfig = {
@@ -23,13 +29,17 @@ export const db   = getFirestore(app)
 export const auth = getAuth(app)
 
 // ─── AUTH ──────────────────────────────────────────────
-export const login  = (email, pwd) => signInWithEmailAndPassword(auth, email, pwd)
-export const logout = () => signOut(auth)
-export const onAuth = (cb) => onAuthStateChanged(auth, cb)
+export const login        = (email, pwd)  => signInWithEmailAndPassword(auth, email, pwd)
+export const logout       = ()            => signOut(auth)
+export const onAuth       = (cb)          => onAuthStateChanged(auth, cb)
+export const cadastrarUser = async (nome, email, pwd) => {
+  const cred = await createUserWithEmailAndPassword(auth, email, pwd)
+  await updateProfile(cred.user, { displayName: nome })
+  return cred.user
+}
+export const resetSenha   = (email)       => sendPasswordResetEmail(auth, email)
 
 // ─── CICLO POR LOTE + MÁQUINA ──────────────────────────
-// Coleção: ciclos/{lote}__{maquina}  →  { lote, maquina, valor: number }
-// Transação atômica garante unicidade entre dispositivos simultâneos.
 function cicloDocId(lote, maquina) {
   const safe = s => String(s).replace(/[^a-zA-Z0-9\-_]/g, '_')
   return `${safe(lote)}__${safe(maquina)}`
@@ -73,25 +83,32 @@ export function onCiclos(cb) {
   )
 }
 
-// ─── EMITIR CICLO COMPLETO ─────────────────────────────
-// Um ciclo gera N etiquetas (fuso 1 até maquina.fusos) em batch atômico.
-export async function emitirCiclo({ lote, maquina, maquinaFusos, produto, descricao, composicao, data, empresaNome }) {
+// ─── EMITIR CICLO ──────────────────────────────────────
+// Recebe userEmail e userName do usuário logado
+export async function emitirCiclo({
+  lote, maquina, maquinaFusos, produto, descricao,
+  composicao, titulo, data, empresa, cnpj,
+  empresaNome, userEmail, userName,
+}) {
   const ciclo      = await getNextCicloLoteMaq(lote, maquina)
   const totalFusos = Math.max(1, parseInt(maquinaFusos) || 1)
   const ts         = serverTimestamp()
 
-  // Registro do ciclo (1 doc)
   const cicloRef = await addDoc(collection(db, 'emissoes'), {
     ciclo, lote, maquina, produto, descricao, composicao,
-    data, totalFusos, empresaNome, criadoEm: ts,
+    titulo, data, totalFusos, empresa, cnpj, empresaNome,
+    userEmail: userEmail || '',
+    userName:  userName  || '',
+    criadoEm: ts,
   })
 
-  // Etiquetas por fuso em batch (Firestore suporta 500/batch; máquinas têm < 500 fusos)
   const batch = writeBatch(db)
   for (let fuso = 1; fuso <= totalFusos; fuso++) {
     batch.set(doc(collection(db, 'etiquetas')), {
       ciclo, lote, maquina, fuso, produto, descricao,
-      composicao, data, empresaNome,
+      composicao, titulo, data, empresa, cnpj, empresaNome,
+      userEmail: userEmail || '',
+      userName:  userName  || '',
       emissaoId: cicloRef.id, criadoEm: ts,
     })
   }
@@ -100,19 +117,18 @@ export async function emitirCiclo({ lote, maquina, maquinaFusos, produto, descri
   return { ciclo, totalFusos, emissaoId: cicloRef.id }
 }
 
-// ─── EMISSÕES (nível ciclo) ────────────────────────────
+// ─── EMISSÕES ──────────────────────────────────────────
 export function onEmissoes(cb) {
   const q = query(collection(db, 'emissoes'), orderBy('criadoEm', 'desc'))
   return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
 }
 
-// ─── ETIQUETAS (nível fuso) ────────────────────────────
 export function onEtiquetas(cb) {
   const q = query(collection(db, 'etiquetas'), orderBy('criadoEm', 'desc'))
   return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
 }
 
-// ─── PRODUTOS ─────────────────────────────────────────
+// ─── PRODUTOS ──────────────────────────────────────────
 export const addProduto    = d  => addDoc(collection(db, 'produtos'), d)
 export const deleteProduto = id => deleteDoc(doc(db, 'produtos', id))
 export function onProdutos(cb) {
@@ -121,7 +137,7 @@ export function onProdutos(cb) {
   )
 }
 
-// ─── MÁQUINAS ─────────────────────────────────────────
+// ─── MÁQUINAS ──────────────────────────────────────────
 export const addMaquina    = d  => addDoc(collection(db, 'maquinas'), d)
 export const deleteMaquina = id => deleteDoc(doc(db, 'maquinas', id))
 export function onMaquinas(cb) {

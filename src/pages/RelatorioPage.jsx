@@ -47,16 +47,13 @@ export function RelatorioPage() {
   const totalEtiquetas = emissoes.reduce((s, e) => s + (parseInt(e.totalFusos) || 0), 0)
   const lotesDistintos = new Set(emissoes.map(e => e.lote)).size
 
-  function limparFiltros() {
-    setFiltros({ de: '', ate: '', maquina: '', produto: '', lote: '' })
-  }
-
   function exportCSV() {
-    const header = ['CICLO','DATA_HORA','LOTE','MAQUINA','PRODUTO','DESCRICAO','COMPOSICAO','TOTAL_FUSOS']
+    const header = ['CICLO','DATA_HORA','LOTE','MAQUINA','PRODUTO','DESCRICAO','COMPOSICAO','TITULO_DTEX','TOTAL_FUSOS','USUARIO']
     const rows = filtradas.map(e => [
       String(e.ciclo).padStart(3,'0'),
       fmtTs(e.criadoEm), e.lote, e.maquina,
-      e.produto, e.descricao||'', e.composicao||'', e.totalFusos||0
+      e.produto, e.descricao||'', e.composicao||'', e.titulo||'',
+      e.totalFusos||0, e.userName || e.userEmail || ''
     ])
     const csv = [header,...rows].map(r =>
       r.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(';')
@@ -64,34 +61,27 @@ export function RelatorioPage() {
     const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `emissoes_textlabel_${today}.csv`
-    a.click()
+    a.download = `emissoes_textlabel_${today}.csv`; a.click()
     toast.success('CSV exportado!')
   }
 
   function reimprimir(e) {
     const maq = maquinas.find(m => m.cod === e.maquina)
     const fusos = parseInt(e.totalFusos || maq?.fusos || 1)
-    if (!confirm(`Reimprimir ciclo ${String(e.ciclo).padStart(3,'0')} — ${fusos} etiquetas (${e.maquina})?`)) return
-    const zpl = buildZPLCiclo(
-      { ...e, ciclo: e.ciclo },
-      { empresaNome: e.empresaNome || 'EMPRESA' },
-      fusos
-    )
+    if (!confirm(`Reimprimir ciclo ${String(e.ciclo).padStart(3,'0')} — ${fusos} etiquetas?`)) return
+    const zpl = buildZPLCiclo({ ...e, ciclo: e.ciclo }, {}, fusos)
     printZPL(zpl, `C${String(e.ciclo).padStart(3,'0')}_${e.maquina}_${e.lote}.zpl`)
     toast.success(`Reimpressão: ${fusos} etiquetas enviadas!`)
   }
 
-  function toggleExpand(id) {
-    setExpanded(p => ({ ...p, [id]: !p[id] }))
-  }
+  function toggleExpand(id) { setExpanded(p => ({ ...p, [id]: !p[id] })) }
 
   return (
     <div className="page-wrap">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h1 className="page-title">Relatório <span>de Produção</span></h1>
-          <p className="page-subtitle">Histórico de ciclos emitidos — cada linha representa um ciclo completo (todos os fusos)</p>
+          <p className="page-subtitle">Histórico de ciclos — cada linha representa um ciclo completo (todos os fusos)</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }} className="no-print">
           <button className="btn btn-ghost btn-sm" onClick={exportCSV}><Download size={13} /> CSV</button>
@@ -125,7 +115,10 @@ export function RelatorioPage() {
       <div className="card no-print" style={{ marginBottom: 16 }}>
         <div className="card-header">
           <span className="card-title orange">FILTROS</span>
-          <button className="btn btn-ghost btn-sm" onClick={limparFiltros}>Limpar</button>
+          <button className="btn btn-ghost btn-sm"
+            onClick={() => setFiltros({ de: '', ate: '', maquina: '', produto: '', lote: '' })}>
+            Limpar
+          </button>
         </div>
         <div className="card-body">
           <div className="filter-bar">
@@ -181,12 +174,13 @@ export function RelatorioPage() {
                 <th>PRODUTO</th>
                 <th>DESCRIÇÃO</th>
                 <th className="td-center">FUSOS</th>
+                <th>USUÁRIO</th>
                 <th className="no-print" />
               </tr>
             </thead>
             <tbody>
               {!filtradas.length && (
-                <tr><td colSpan="9"><div className="empty"><p>Nenhum ciclo encontrado.</p></div></td></tr>
+                <tr><td colSpan="10"><div className="empty"><p>Nenhum ciclo encontrado.</p></div></td></tr>
               )}
               {filtradas.map(e => (
                 <>
@@ -205,6 +199,18 @@ export function RelatorioPage() {
                     <td className="td-center">
                       <strong style={{ color: 'var(--accent)' }}>{e.totalFusos}</strong>
                     </td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <span style={{ fontSize: '.78rem', color: 'var(--text)' }}>
+                          {e.userName || '—'}
+                        </span>
+                        {e.userEmail && (
+                          <span style={{ fontSize: '.68rem', color: 'var(--muted)' }}>
+                            {e.userEmail}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="no-print">
                       <button className="btn btn-ghost btn-sm btn-icon"
                         onClick={ev => { ev.stopPropagation(); reimprimir(e) }}
@@ -214,10 +220,9 @@ export function RelatorioPage() {
                     </td>
                   </tr>
 
-                  {/* Linha expandida: fusos */}
                   {expanded[e.id] && (
                     <tr key={`${e.id}-fusos`}>
-                      <td colSpan="9" style={{ background: 'var(--surface)', padding: '12px 24px' }}>
+                      <td colSpan="10" style={{ background: 'var(--surface)', padding: '12px 24px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {Array.from({ length: e.totalFusos }, (_, i) => i + 1).map(f => (
                             <span key={f} className="badge badge-gray" style={{ minWidth: 36, justifyContent: 'center' }}>
@@ -226,7 +231,9 @@ export function RelatorioPage() {
                           ))}
                         </div>
                         <div style={{ marginTop: 8, fontSize: '.72rem', color: 'var(--muted)' }}>
-                          Composição: {e.composicao || '—'} &nbsp;·&nbsp; Data fab.: {e.data || '—'}
+                          Comp.: {e.composicao || '—'} &nbsp;·&nbsp;
+                          Título: {e.titulo || '—'} Dtex &nbsp;·&nbsp;
+                          Data fab.: {e.data || '—'}
                         </div>
                       </td>
                     </tr>

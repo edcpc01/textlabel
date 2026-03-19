@@ -4,7 +4,7 @@ import { Printer, Copy, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
-  emitirCiclo, getCicloAtualLoteMaq, getEmpresa,
+  emitirCiclo, getCicloAtualLoteMaq, getEmpresa, auth,
 } from '../lib/firebase'
 import { buildZPLCiclo, buildZPL, printZPL, downloadZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
@@ -30,7 +30,6 @@ export function ProducaoPage() {
     return () => { u1(); u2() }
   }, [])
 
-  // Atualiza preview do ciclo ao mudar lote ou máquina
   useEffect(() => {
     if (form.lote && form.maquina) {
       getCicloAtualLoteMaq(form.lote, form.maquina).then(setCicloPreview)
@@ -39,7 +38,6 @@ export function ProducaoPage() {
     }
   }, [form.lote, form.maquina])
 
-  // Auto-fill ao selecionar produto (descrição, composição, título, empresa, cnpj)
   function handleProdChange(cod) {
     const prod = produtos.find(p => p.cod === cod)
     setForm(f => ({
@@ -53,18 +51,14 @@ export function ProducaoPage() {
     }))
   }
 
-  function getMaquinaObj() {
-    return maquinas.find(m => m.cod === form.maquina)
-  }
+  const maqObj     = maquinas.find(m => m.cod === form.maquina)
+  const totalFusos = parseInt(maqObj?.fusos) || 0
 
   const zplConfig = {
     vel:  configImpressora.vel  || 3,
     dens: configImpressora.dens || 15,
     offx: configImpressora.offx || 0,
   }
-
-  const maqObj     = getMaquinaObj()
-  const totalFusos = parseInt(maqObj?.fusos) || 0
 
   const zplPreview = (form.produto && form.lote && form.maquina)
     ? buildZPL({ ...form, fuso: 1, ciclo: cicloPreview || 1 }, zplConfig)
@@ -83,10 +77,13 @@ export function ProducaoPage() {
 
     setLoading(true)
     try {
+      const user = auth.currentUser
       const { ciclo, totalFusos: nFusos } = await emitirCiclo({
         ...form,
         maquinaFusos: totalFusos,
         empresaNome:  form.empresa || 'EMPRESA',
+        userEmail:    user?.email       || '',
+        userName:     user?.displayName || user?.email || '',
       })
 
       const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos)
@@ -102,16 +99,6 @@ export function ProducaoPage() {
     }
   }
 
-  function copiarZPL() {
-    if (!zplPreview) { toast.error('Preencha os dados para gerar o ZPL.'); return }
-    navigator.clipboard?.writeText(zplPreview).then(() => toast.success('ZPL copiado!'))
-  }
-
-  function baixarZPL() {
-    if (!zplPreview) { toast.error('Preencha os dados para gerar o ZPL.'); return }
-    downloadZPL(zplPreview, `preview_fuso1_${Date.now()}.zpl`)
-  }
-
   return (
     <div className="page-wrap">
       <div className="page-header">
@@ -119,7 +106,6 @@ export function ProducaoPage() {
         <p className="page-subtitle">Emissão de ciclos — cada ciclo gera uma etiqueta por fuso automaticamente</p>
       </div>
 
-      {/* STAT CARDS */}
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-label">Próximo Ciclo</div>
@@ -155,7 +141,6 @@ export function ProducaoPage() {
       </div>
 
       <div className="two-col">
-        {/* FORMULÁRIO */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card">
             <div className="card-header">
@@ -168,7 +153,6 @@ export function ProducaoPage() {
             </div>
             <div className="card-body">
               <div className="form-grid">
-
                 <div className="form-group">
                   <label className="form-label">Máquina</label>
                   <select className="form-control" value={form.maquina}
@@ -181,14 +165,11 @@ export function ProducaoPage() {
                     ))}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Lote / Ordem de Produção</label>
                   <input className="form-control" type="text" placeholder="Ex: 5846"
-                    value={form.lote}
-                    onChange={e => setForm(f => ({ ...f, lote: e.target.value }))} />
+                    value={form.lote} onChange={e => setForm(f => ({ ...f, lote: e.target.value }))} />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Produto / Fio</label>
                   <select className="form-control" value={form.produto}
@@ -199,39 +180,29 @@ export function ProducaoPage() {
                     ))}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Data de Fabricação</label>
                   <input className="form-control" type="date"
-                    value={form.data}
-                    onChange={e => setForm(f => ({ ...f, data: e.target.value }))} />
+                    value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))} />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Composição</label>
                   <input className="form-control" type="text" placeholder="100% PES"
-                    value={form.composicao}
-                    onChange={e => setForm(f => ({ ...f, composicao: e.target.value }))} />
+                    value={form.composicao} onChange={e => setForm(f => ({ ...f, composicao: e.target.value }))} />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Título (Dtex)</label>
                   <input className="form-control" type="text" placeholder="230"
-                    value={form.titulo}
-                    onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
+                    value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
                 </div>
-
                 <div className="form-group span2">
                   <label className="form-label">Descrição do Produto</label>
                   <input className="form-control" type="text"
                     placeholder="FIO PES TEXT. A AR SO 2X100/96DTEX CRU"
-                    value={form.descricao}
-                    onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} />
+                    value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} />
                 </div>
-
               </div>
 
-              {/* Aviso de fusos */}
               {form.maquina && totalFusos > 0 && (
                 <div style={{
                   marginTop: 16, padding: '10px 14px', borderRadius: 4,
@@ -253,13 +224,18 @@ export function ProducaoPage() {
             </div>
           </div>
 
-          {/* ZPL */}
           <div className="card no-print">
             <div className="card-header">
               <span className="card-title">ZPL — Zebra ZT230 · 200dpi · 50×30mm</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-ghost btn-sm" onClick={copiarZPL}><Copy size={13} /> Copiar</button>
-                <button className="btn btn-ghost btn-sm" onClick={baixarZPL}><Download size={13} /> Download</button>
+                <button className="btn btn-ghost btn-sm"
+                  onClick={() => navigator.clipboard?.writeText(zplPreview).then(() => toast.success('ZPL copiado!'))}>
+                  <Copy size={13} /> Copiar
+                </button>
+                <button className="btn btn-ghost btn-sm"
+                  onClick={() => zplPreview && downloadZPL(zplPreview, `preview_fuso1_${Date.now()}.zpl`)}>
+                  <Download size={13} /> Download
+                </button>
               </div>
             </div>
             <div className="card-body" style={{ padding: 0 }}>
@@ -275,16 +251,13 @@ export function ProducaoPage() {
           </div>
         </div>
 
-        {/* PREVIEW */}
         <div>
           <div className="card">
             <div className="card-header">
               <span className="card-title">Preview — Fuso 1</span>
             </div>
             <div className="card-body" style={{ padding: 0 }}>
-              <LabelPreview
-                record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }}
-              />
+              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} />
             </div>
           </div>
         </div>
