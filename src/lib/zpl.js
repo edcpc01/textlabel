@@ -1,30 +1,26 @@
 // src/lib/zpl.js
 // Zebra ZT230 — ZDesigner — 200dpi — Etiqueta 50×30mm
-// 200dpi: 1mm ≈ 7.874 dots  |  50mm = 393 dots (PW)  |  30mm = 236 dots (LL)
+// 200dpi: 1mm ≈ 7.874 dots | 50mm = 393 dots (PW) | 30mm = 236 dots (LL)
 
 export function buildZPL(record, config = {}) {
   const {
-    produto    = '',
-    descricao  = '',
-    lote       = '',
-    data       = '',
-    fuso       = '',
-    maquina    = '',
-    composicao = '',
-    titulo     = '',
     empresa    = '',
     cnpj       = '',
+    composicao = '',
+    descricao  = '',
+    titulo     = '',
+    maquina    = '',
     ciclo      = 1,
+    fuso       = '',
+    lote       = '',
+    data       = '',
   } = record
 
   const { vel = 3, dens = 15, offx = 0 } = config
 
-  const empresaStr  = String(empresa || 'EMPRESA').toUpperCase().slice(0, 22)
-  const cnpjStr     = String(cnpj || '').slice(0, 20)
-  const cicloStr    = String(ciclo).padStart(6, '0')
-  const dataFmt     = data ? data.split('-').reverse().join('/') : ''
-  const tituloStr   = titulo ? `Dtex: ${titulo}` : ''
-  const bcVal       = `${produto}-${lote}-C${cicloStr}-F${fuso}`
+  const cicloStr = String(ciclo).padStart(2, '0')
+  const dataFmt  = data ? data.split('-').reverse().join('/') : ''
+  const compTit  = [composicao, titulo ? `${titulo}TEX` : ''].filter(Boolean).join(' - ')
 
   return `^XA
 ^MMT
@@ -36,29 +32,24 @@ export function buildZPL(record, config = {}) {
 ~SD${dens}
 ^CI28
 
-^FO4,4^GB385,228,2^FS
+^FO0,8^FB393,1,0,C^A0N,24,22^FD${empresa.slice(0,36)}^FS
 
-^FO8,8^A0N,12,12^FD${empresaStr}^FS
-^FO8,8^FB377,1,0,R^A0N,10,10^FDCICLO: ${cicloStr}^FS
-^FO8,22^A0N,9,9^FD${cnpjStr}^FS
-^FO8,34^GB377,2,2^FS
+^FO0,36^FB393,1,0,C^A0N,20,18^FD${cnpj ? `CNPJ: ${cnpj}` : ''}^FS
 
-^FO8,38^A0N,16,16^FD${String(produto).slice(0, 20)}^FS
-^FO8,56^A0N,10,10^FD${String(descricao).slice(0, 34)}^FS
-^FO8,68^GB377,1,1^FS
+^FO0,60^FB393,1,0,C^A0N,20,18^FD${descricao.slice(0,36)}^FS
 
-^FO8,72^A0N,11,11^FDLOTE: ${String(lote).slice(0, 18)}^FS
-^FO200,72^A0N,11,11^FDDATA: ${dataFmt}^FS
-^FO8,86^A0N,13,13^FDFUSO N.: ${fuso}^FS
-^FO200,86^A0N,11,11^FDMAQ: ${String(maquina).slice(0, 10)}^FS
-^FO8,100^A0N,10,10^FDComp.: ${String(composicao).slice(0, 22)} | ${tituloStr}^FS
-^FO8,112^GB377,1,1^FS
+^FO0,84^FB393,1,0,C^A0N,18,16^FD${compTit.slice(0,40)}^FS
 
-^FO24,116^BY1.5^BCN,46,N,N,N^FD${bcVal}^FS
-^FO24,165^A0N,9,9^FD${bcVal}^FS
-^FO8,178^GB377,1,1^FS
-^FO8,182^A0N,10,10^FDMáq: ${maquina} | Fuso: ${fuso}^FS
-^FO8,182^FB377,1,0,R^A0N,9,9^FD${new Date().toLocaleString('pt-BR')}^FS
+^FO0,106^GB393,2,2^FS
+
+^FO0,114^FB130,1,0,C^A0N,34,30^FD${String(maquina).slice(0,6)}^FS
+^FO130,114^FB130,1,0,C^A0N,34,30^FD${cicloStr}^FS
+^FO260,110^FB133,1,0,C^A0N,46,42^FD${String(fuso)}^FS
+
+^FO0,164^GB393,2,2^FS
+
+^FO0,172^FB196,1,0,C^A0N,22,20^FDLote: ${String(lote)}^FS
+^FO196,172^FB197,1,0,C^A0N,22,20^FD${dataFmt}^FS
 
 ^PQ1,0,1,Y
 ^XZ`
