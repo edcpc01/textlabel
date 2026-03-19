@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { onAuth } from './lib/firebase'
 import { Topbar } from './components/Topbar'
+import { InstallBanner } from './components/InstallBanner'
 import { LoginPage } from './pages/LoginPage'
 import { ProducaoPage } from './pages/ProducaoPage'
 import { CadastroPage } from './pages/CadastroPage'
@@ -17,7 +18,7 @@ function ProtectedRoute({ user, children }) {
 }
 
 export default function App() {
-  const [user, setUser] = useState(undefined) // undefined = loading
+  const [user, setUser] = useState(undefined)
 
   useEffect(() => {
     const unsub = onAuth(u => setUser(u))
@@ -26,8 +27,20 @@ export default function App() {
 
   if (user === undefined) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--accent)', fontSize: '.85rem' }}>Carregando...</div>
+      <div style={{
+        minHeight: '100vh', background: 'var(--bg)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16,
+      }}>
+        {/* Spinner */}
+        <div style={{
+          width: 40, height: 40, borderRadius: '50%',
+          border: '3px solid var(--border2)',
+          borderTopColor: 'var(--accent)',
+          animation: 'spin .7s linear infinite',
+        }} />
+        <div style={{ color: 'var(--muted)', fontSize: '.8rem' }}>Carregando TextLabel...</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
@@ -38,12 +51,15 @@ export default function App() {
         position="bottom-right"
         toastOptions={{
           duration: 3500,
-          className: 'toast-custom',
           style: { background: '#1a2d47', border: '1px solid #254870', color: '#e2eaf4' },
           success: { iconTheme: { primary: '#00e5a0', secondary: '#000' } },
           error:   { iconTheme: { primary: '#ff4466', secondary: '#fff' } },
         }}
       />
+
+      {/* Banner de instalação PWA — aparece em qualquer página */}
+      <InstallBanner />
+
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
         <Route path="/*" element={
