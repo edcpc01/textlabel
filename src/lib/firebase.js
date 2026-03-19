@@ -13,6 +13,8 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth'
 
 const firebaseConfig = {
@@ -38,6 +40,7 @@ export const cadastrarUser = async (nome, email, pwd) => {
   return cred.user
 }
 export const resetSenha   = (email)       => sendPasswordResetEmail(auth, email)
+export const loginGoogle  = ()            => signInWithPopup(auth, new GoogleAuthProvider())
 
 // ─── CICLO POR LOTE + MÁQUINA ──────────────────────────
 function cicloDocId(lote, maquina) {
