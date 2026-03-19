@@ -1,10 +1,11 @@
-// src/pages/CadastroPage.jsx — sem operadores
+// src/pages/CadastroPage.jsx
 import { useState, useEffect } from 'react'
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   onProdutos, addProduto, deleteProduto,
   onMaquinas, addMaquina, deleteMaquina,
+  getEmpresa, setEmpresa,
 } from '../lib/firebase'
 
 function useCollection(onFn) {
@@ -42,6 +43,74 @@ function CadTable({ columns, rows, onDelete }) {
   )
 }
 
+// ─── EMPRESA ──────────────────────────────────────────
+function EmpresaCard() {
+  const [f, setF] = useState({ nome: '', cnpj: '' })
+  const [loading, setLoading] = useState(false)
+  const [salvo, setSalvo] = useState(false)
+
+  useEffect(() => {
+    getEmpresa().then(d => {
+      if (d?.nome || d?.cnpj) setF({ nome: d.nome || '', cnpj: d.cnpj || '' })
+    })
+  }, [])
+
+  async function salvar() {
+    if (!f.nome) { toast.error('Informe o nome da empresa.'); return }
+    setLoading(true)
+    try {
+      await setEmpresa({ nome: f.nome.trim(), cnpj: f.cnpj.trim() })
+      setSalvo(true)
+      setTimeout(() => setSalvo(false), 2000)
+      toast.success('Empresa salva!')
+    } catch (e) { toast.error('Erro: ' + e.message) }
+    setLoading(false)
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card-header">
+        <span className="card-title">EMPRESA</span>
+        <span style={{ fontSize: '.73rem', color: 'var(--muted)' }}>
+          Aparece no cabeçalho de todas as etiquetas
+        </span>
+      </div>
+      <div className="card-body">
+        <div className="form-grid">
+          <div className="form-group span2">
+            <label className="form-label">Razão Social / Nome da Empresa</label>
+            <input
+              className="form-control"
+              placeholder="Nome da Empresa"
+              value={f.nome}
+              onChange={e => setF(p => ({ ...p, nome: e.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">CNPJ</label>
+            <input
+              className="form-control"
+              placeholder="00.000.000/0000-00"
+              value={f.cnpj}
+              onChange={e => setF(p => ({ ...p, cnpj: e.target.value }))}
+            />
+          </div>
+        </div>
+        <button
+          className="btn btn-primary btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={salvar}
+          disabled={loading}
+        >
+          <Save size={13} />
+          {loading ? 'Salvando...' : salvo ? '✓ Salvo!' : 'Salvar Empresa'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── PRODUTOS ─────────────────────────────────────────
 function ProdutosCard({ produtos }) {
   const [f, setF] = useState({ cod: '', desc: '', comp: '', bitola: '', un: 'kg' })
 
@@ -83,7 +152,8 @@ function ProdutosCard({ produtos }) {
           </div>
           <div className="form-group">
             <label className="form-label">Unidade</label>
-            <select className="form-control" value={f.un} onChange={e => setF(p => ({ ...p, un: e.target.value }))}>
+            <select className="form-control" value={f.un}
+              onChange={e => setF(p => ({ ...p, un: e.target.value }))}>
               <option value="kg">kg</option>
               <option value="g">g</option>
               <option value="m">m</option>
@@ -104,7 +174,11 @@ function ProdutosCard({ produtos }) {
               { key: 'un',     label: 'Un.',        render: v => <span className="badge badge-orange">{v}</span> },
             ]}
             rows={produtos}
-            onDelete={async id => { if (!confirm('Excluir produto?')) return; await deleteProduto(id); toast.success('Removido.') }}
+            onDelete={async id => {
+              if (!confirm('Excluir produto?')) return
+              await deleteProduto(id)
+              toast.success('Removido.')
+            }}
           />
         </div>
       </div>
@@ -112,6 +186,7 @@ function ProdutosCard({ produtos }) {
   )
 }
 
+// ─── MÁQUINAS ─────────────────────────────────────────
 function MaquinasCard({ maquinas }) {
   const [f, setF] = useState({ cod: '', desc: '', fusos: '', local: '' })
 
@@ -161,12 +236,16 @@ function MaquinasCard({ maquinas }) {
             columns={[
               { key: 'cod',   label: 'Código',   render: v => <span className="badge badge-blue">{v}</span> },
               { key: 'desc',  label: 'Descrição' },
-              { key: 'fusos', label: 'Fusos',    cls: 'td-mono td-center',
+              { key: 'fusos', label: 'Fusos', cls: 'td-mono td-center',
                 render: v => <strong style={{ color: 'var(--accent)' }}>{v}</strong> },
               { key: 'local', label: 'Localização' },
             ]}
             rows={maquinas}
-            onDelete={async id => { if (!confirm('Excluir máquina?')) return; await deleteMaquina(id); toast.success('Removida.') }}
+            onDelete={async id => {
+              if (!confirm('Excluir máquina?')) return
+              await deleteMaquina(id)
+              toast.success('Removida.')
+            }}
           />
         </div>
       </div>
@@ -174,6 +253,7 @@ function MaquinasCard({ maquinas }) {
   )
 }
 
+// ─── PAGE ─────────────────────────────────────────────
 export function CadastroPage() {
   const produtos = useCollection(onProdutos)
   const maquinas = useCollection(onMaquinas)
@@ -182,8 +262,9 @@ export function CadastroPage() {
     <div className="page-wrap">
       <div className="page-header">
         <h1 className="page-title">Cadastros</h1>
-        <p className="page-subtitle">Produtos e Máquinas — sincronizados em tempo real via Firestore</p>
+        <p className="page-subtitle">Empresa · Produtos · Máquinas — sincronizados via Firestore</p>
       </div>
+      <EmpresaCard />
       <ProdutosCard produtos={produtos} />
       <MaquinasCard maquinas={maquinas} />
     </div>
