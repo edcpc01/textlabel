@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 function drawBarcode(svg, text) {
   svg.innerHTML = ''
   if (!text) return
-  const W = 180, H = 24
+  const W = 180, H = 22
   svg.setAttribute('width', W)
   svg.setAttribute('height', H)
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`)
@@ -24,15 +24,24 @@ function drawBarcode(svg, text) {
   }
 }
 
-export function LabelPreview({ record, empresaNome }) {
+export function LabelPreview({ record }) {
   const bcRef = useRef(null)
 
   const {
-    produto = '', descricao = '', lote = '—', data = '',
-    fuso = 1, maquina = '—', composicao = '—', ciclo = 1,
+    produto    = '',
+    descricao  = '',
+    lote       = '—',
+    data       = '',
+    fuso       = 1,
+    maquina    = '—',
+    composicao = '—',
+    titulo     = '',
+    empresa    = '',
+    cnpj       = '',
+    ciclo      = 1,
   } = record || {}
 
-  const empresaStr = String(empresaNome || 'EMPRESA').toUpperCase().slice(0, 18)
+  const empresaStr = String(empresa || 'EMPRESA').toUpperCase().slice(0, 18)
   const cicloStr   = String(ciclo).padStart(6, '0')
   const dataFmt    = data ? data.split('-').reverse().join('/') : '—'
   const bcVal      = produto && lote !== '—' ? `${produto}-${lote}-C${cicloStr}-F${fuso}` : ''
@@ -44,11 +53,19 @@ export function LabelPreview({ record, empresaNome }) {
   return (
     <div className="label-preview-wrap">
       <div className="label-preview">
-        {/* Header */}
+
+        {/* Header: empresa + ciclo */}
         <div className="lbl-head">
           <span className="lbl-empresa">{empresaStr}</span>
           <span className="lbl-ciclo-badge">CICLO {cicloStr}</span>
         </div>
+
+        {/* CNPJ */}
+        {cnpj && (
+          <div style={{ fontSize: '6.5px', color: '#666', marginBottom: 1 }}>{cnpj}</div>
+        )}
+
+        <div className="lbl-div" />
 
         {/* Produto */}
         <div className="lbl-prod">{produto || '— PRODUTO —'}</div>
@@ -76,12 +93,14 @@ export function LabelPreview({ record, empresaNome }) {
           </div>
         </div>
 
-        {/* Composição */}
-        <div className="lbl-comp">Comp.: {composicao}</div>
+        {/* Composição + Título */}
+        <div className="lbl-comp">
+          Comp.: {composicao}{titulo ? ` | Dtex: ${titulo}` : ''}
+        </div>
 
         {/* Barcode */}
         <div className="lbl-bc">
-          <svg ref={bcRef} width="180" height="24" xmlns="http://www.w3.org/2000/svg" />
+          <svg ref={bcRef} width="180" height="22" xmlns="http://www.w3.org/2000/svg" />
           <div className="lbl-bc-num">{bcVal || '—'}</div>
         </div>
 
@@ -91,6 +110,7 @@ export function LabelPreview({ record, empresaNome }) {
           <span>{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
+
       <div className="label-hint">
         Real: 50×30mm · Zebra ZT230 · 200dpi · ZPL II · Code 128
       </div>

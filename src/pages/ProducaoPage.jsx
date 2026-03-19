@@ -1,6 +1,6 @@
 // src/pages/ProducaoPage.jsx
 import { useState, useEffect } from 'react'
-import { Printer, Copy, Download, RefreshCw } from 'lucide-react'
+import { Printer, Copy, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
@@ -12,25 +12,25 @@ import { LabelPreview } from '../components/LabelPreview'
 const EMPTY = {
   produto: '', maquina: '', lote: '',
   data: new Date().toISOString().split('T')[0],
-  composicao: '', descricao: '',
+  composicao: '', descricao: '', titulo: '', empresa: '', cnpj: '',
 }
 
 export function ProducaoPage() {
-  const [form, setForm]         = useState(EMPTY)
-  const [produtos, setProdutos] = useState([])
-  const [maquinas, setMaquinas] = useState([])
+  const [form, setForm]           = useState(EMPTY)
+  const [produtos, setProdutos]   = useState([])
+  const [maquinas, setMaquinas]   = useState([])
   const [cicloPreview, setCicloPreview] = useState(null)
-  const [empresa, setEmpresaData] = useState({})
-  const [loading, setLoading]   = useState(false)
+  const [configImpressora, setConfigImpressora] = useState({})
+  const [loading, setLoading]     = useState(false)
 
   useEffect(() => {
     const u1 = onProdutos(setProdutos)
     const u2 = onMaquinas(setMaquinas)
-    getEmpresa().then(setEmpresaData)
+    getEmpresa().then(setConfigImpressora)
     return () => { u1(); u2() }
   }, [])
 
-  // Atualiza preview do ciclo quando lote ou máquina mudam
+  // Atualiza preview do ciclo ao mudar lote ou máquina
   useEffect(() => {
     if (form.lote && form.maquina) {
       getCicloAtualLoteMaq(form.lote, form.maquina).then(setCicloPreview)
@@ -39,13 +39,17 @@ export function ProducaoPage() {
     }
   }, [form.lote, form.maquina])
 
+  // Auto-fill ao selecionar produto (descrição, composição, título, empresa, cnpj)
   function handleProdChange(cod) {
     const prod = produtos.find(p => p.cod === cod)
     setForm(f => ({
       ...f,
       produto:    cod,
-      descricao:  prod?.desc || f.descricao,
-      composicao: prod?.comp || f.composicao,
+      descricao:  prod?.desc    || f.descricao,
+      composicao: prod?.comp    || f.composicao,
+      titulo:     prod?.titulo  || f.titulo,
+      empresa:    prod?.empresa || f.empresa,
+      cnpj:       prod?.cnpj    || f.cnpj,
     }))
   }
 
@@ -53,21 +57,18 @@ export function ProducaoPage() {
     return maquinas.find(m => m.cod === form.maquina)
   }
 
-  // Config ZPL da empresa
   const zplConfig = {
-    empresaNome: empresa.nome || 'EMPRESA',
-    vel:  empresa.vel  || 3,
-    dens: empresa.dens || 15,
-    offx: empresa.offx || 0,
+    vel:  configImpressora.vel  || 3,
+    dens: configImpressora.dens || 15,
+    offx: configImpressora.offx || 0,
   }
 
-  // ZPL do preview (fuso 1 apenas)
+  const maqObj     = getMaquinaObj()
+  const totalFusos = parseInt(maqObj?.fusos) || 0
+
   const zplPreview = (form.produto && form.lote && form.maquina)
     ? buildZPL({ ...form, fuso: 1, ciclo: cicloPreview || 1 }, zplConfig)
     : ''
-
-  const maqObj   = getMaquinaObj()
-  const totalFusos = parseInt(maqObj?.fusos) || 0
 
   async function emitir() {
     const erros = []
@@ -85,24 +86,15 @@ export function ProducaoPage() {
       const { ciclo, totalFusos: nFusos } = await emitirCiclo({
         ...form,
         maquinaFusos: totalFusos,
-        empresaNome:  empresa.nome || 'EMPRESA',
+        empresaNome:  form.empresa || 'EMPRESA',
       })
 
-      // Gera ZPL com todas as etiquetas (fuso 1 ao N) e envia à impressora
-      const zplAll = buildZPLCiclo(
-        { ...form, ciclo },
-        zplConfig,
-        nFusos
-      )
-      const filename = `C${String(ciclo).padStart(6,'0')}_${form.maquina}_${form.lote}.zpl`
+      const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos)
+      const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
       printZPL(zplAll, filename)
 
-      // Atualiza preview do próximo ciclo
       setCicloPreview(ciclo + 1)
-
-      toast.success(
-        `✓ Ciclo ${String(ciclo).padStart(3,'0')} — ${nFusos} etiquetas geradas (${form.maquina} / ${form.lote})`
-      )
+      toast.success(`✓ Ciclo ${String(ciclo).padStart(3,'0')} — ${nFusos} etiquetas (${form.maquina} / ${form.lote})`)
     } catch (err) {
       toast.error('Erro ao emitir: ' + err.message)
     } finally {
@@ -154,7 +146,7 @@ export function ProducaoPage() {
         <div className="stat-card" style={{ borderTopColor: 'var(--yellow)' }}>
           <div className="stat-label">Máquina / Fusos</div>
           <div className="stat-value" style={{ fontSize: '1.1rem', paddingTop: '.3rem', color: 'var(--yellow)' }}>
-            {form.maquina || '—'} {totalFusos ? `/ ${totalFusos} fusos` : ''}
+            {form.maquina || '—'}{totalFusos ? ` / ${totalFusos}` : ''}
           </div>
           <div className="stat-sub">
             {totalFusos ? `${totalFusos} etiquetas por ciclo` : 'cadastre fusos na máquina'}
@@ -192,8 +184,9 @@ export function ProducaoPage() {
 
                 <div className="form-group">
                   <label className="form-label">Lote / Ordem de Produção</label>
-                  <input className="form-control" type="text" placeholder="Ex: OP-2024-001"
-                    value={form.lote} onChange={e => setForm(f => ({ ...f, lote: e.target.value }))} />
+                  <input className="form-control" type="text" placeholder="Ex: 5846"
+                    value={form.lote}
+                    onChange={e => setForm(f => ({ ...f, lote: e.target.value }))} />
                 </div>
 
                 <div className="form-group">
@@ -210,24 +203,35 @@ export function ProducaoPage() {
                 <div className="form-group">
                   <label className="form-label">Data de Fabricação</label>
                   <input className="form-control" type="date"
-                    value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))} />
+                    value={form.data}
+                    onChange={e => setForm(f => ({ ...f, data: e.target.value }))} />
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">Composição</label>
-                  <input className="form-control" type="text" placeholder="Ex: 100% Poliéster"
-                    value={form.composicao} onChange={e => setForm(f => ({ ...f, composicao: e.target.value }))} />
+                  <input className="form-control" type="text" placeholder="100% PES"
+                    value={form.composicao}
+                    onChange={e => setForm(f => ({ ...f, composicao: e.target.value }))} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Título (Dtex)</label>
+                  <input className="form-control" type="text" placeholder="230"
+                    value={form.titulo}
+                    onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
                 </div>
 
                 <div className="form-group span2">
                   <label className="form-label">Descrição do Produto</label>
-                  <input className="form-control" type="text" placeholder="Descrição completa"
-                    value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} />
+                  <input className="form-control" type="text"
+                    placeholder="FIO PES TEXT. A AR SO 2X100/96DTEX CRU"
+                    value={form.descricao}
+                    onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} />
                 </div>
 
               </div>
 
-              {/* AVISO de fusos */}
+              {/* Aviso de fusos */}
               {form.maquina && totalFusos > 0 && (
                 <div style={{
                   marginTop: 16, padding: '10px 14px', borderRadius: 4,
@@ -242,17 +246,14 @@ export function ProducaoPage() {
               <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
                 <button className="btn btn-primary" onClick={emitir} disabled={loading}>
                   <Printer size={15} />
-                  {loading
-                    ? 'Emitindo...'
-                    : `Emitir Ciclo${totalFusos ? ` (${totalFusos} etiquetas)` : ''}`
-                  }
+                  {loading ? 'Emitindo...' : `Emitir Ciclo${totalFusos ? ` (${totalFusos} etiquetas)` : ''}`}
                 </button>
                 <button className="btn btn-ghost btn-sm" onClick={() => setForm(EMPTY)}>Limpar</button>
               </div>
             </div>
           </div>
 
-          {/* ZPL PREVIEW */}
+          {/* ZPL */}
           <div className="card no-print">
             <div className="card-header">
               <span className="card-title">ZPL — Zebra ZT230 · 200dpi · 50×30mm</span>
@@ -274,7 +275,7 @@ export function ProducaoPage() {
           </div>
         </div>
 
-        {/* PREVIEW ETIQUETA */}
+        {/* PREVIEW */}
         <div>
           <div className="card">
             <div className="card-header">
@@ -283,7 +284,6 @@ export function ProducaoPage() {
             <div className="card-body" style={{ padding: 0 }}>
               <LabelPreview
                 record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }}
-                empresaNome={empresa.nome || 'EMPRESA'}
               />
             </div>
           </div>
