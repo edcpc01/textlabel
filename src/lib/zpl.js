@@ -104,7 +104,7 @@ export async function printZPL(content, filename, onStatus) {
   // ── Método 2: Servidor local (textlabel-print bridge) ──
   try {
     status('bridge')
-    const res = await fetch('http://localhost:9191/print', {
+    const res = await fetch('http://127.0.0.1:9191/print', {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: content,

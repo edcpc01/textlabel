@@ -30,7 +30,7 @@ export function ProducaoPage() {
     const u2 = onMaquinas(setMaquinas)
     getEmpresa().then(setConfigImpressora)
     // Verifica se o Print Bridge local está rodando
-    fetch('http://localhost:9191/ping', { signal: AbortSignal.timeout(2000) })
+    fetch('http://127.0.0.1:9191/ping', { signal: AbortSignal.timeout(2000) })
       .then(r => r.json()).then(d => setBridgeOk(d.ok === true))
       .catch(() => setBridgeOk(false))
     return () => { u1(); u2() }
@@ -170,7 +170,7 @@ export function ProducaoPage() {
         {bridgeOk === false && (
           <a href="#" style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: '.72rem', textDecoration: 'none' }}
             onClick={e => { e.preventDefault()
-              fetch('http://localhost:9191/ping', { signal: AbortSignal.timeout(2000) })
+              fetch('http://127.0.0.1:9191/ping', { signal: AbortSignal.timeout(2000) })
                 .then(r => r.json()).then(d => setBridgeOk(d.ok === true)).catch(() => setBridgeOk(false))
             }}>
             ↻ Tentar novamente
