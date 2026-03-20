@@ -60,10 +60,13 @@ export function buildZPLCiclo(baseRecord, config, totalFusos) {
 }
 
 export function downloadZPL(content, filename) {
-  const blob = new Blob([content], { type: 'text/plain' })
+  const blob = new Blob([content], { type: 'application/octet-stream' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = filename || `etiqueta_${Date.now()}.zpl`
+  // Salva como .txt para evitar bloqueio do Windows Defender
+  // O monitor MONITOR-USB.bat processa arquivos .txt com prefixo C_
+  const safeName = (filename || `etiqueta_${Date.now()}.zpl`).replace('.zpl', '.txt')
+  a.download = safeName
   a.click()
   URL.revokeObjectURL(a.href)
 }
