@@ -1,6 +1,5 @@
 // src/lib/zpl.js
 // Zebra ZT230 — ZDesigner — 200dpi — Etiqueta 50×30mm
-// 200dpi: 1mm ≈ 7.874 dots | 50mm = 393 dots (PW) | 30mm = 236 dots (LL)
 
 export function buildZPL(record, config = {}) {
   const {
@@ -33,11 +32,8 @@ export function buildZPL(record, config = {}) {
 ^CI28
 
 ^FO0,8^FB393,1,0,C^A0N,24,22^FD${empresa.slice(0,36)}^FS
-
 ^FO0,36^FB393,1,0,C^A0N,20,18^FD${cnpj ? `CNPJ: ${cnpj}` : ''}^FS
-
 ^FO0,60^FB393,1,0,C^A0N,20,18^FD${descricao.slice(0,36)}^FS
-
 ^FO0,84^FB393,1,0,C^A0N,18,16^FD${compTit.slice(0,40)}^FS
 
 ^FO0,106^GB393,2,2^FS
@@ -72,13 +68,56 @@ export function downloadZPL(content, filename) {
   URL.revokeObjectURL(a.href)
 }
 
-export function printZPL(content, filename) {
+// ─── IMPRESSÃO DIRETA ──────────────────────────────────
+// Tenta 3 métodos em ordem:
+// 1. Zebra BrowserPrint SDK (se instalado)
+// 2. Servidor local textlabel-print (porta 9100 bridge)
+// 3. Fallback: download do arquivo .zpl
+
+export async function printZPL(content, filename, onStatus) {
+  const status = onStatus || (() => {})
+
+  // ── Método 1: Zebra BrowserPrint ──
   if (window.BrowserPrint) {
-    window.BrowserPrint.getDefaultDevice('printer',
-      dev => dev.send(content, null, () => downloadZPL(content, filename)),
-      ()   => downloadZPL(content, filename)
-    )
-  } else {
-    downloadZPL(content, filename)
+    status('browserprint')
+    return new Promise(resolve => {
+      window.BrowserPrint.getDefaultDevice('printer',
+        dev => {
+          dev.send(content,
+            () => { status('ok'); resolve('browserprint') },
+            err => {
+              status('fallback')
+              downloadZPL(content, filename)
+              resolve('download')
+            }
+          )
+        },
+        () => {
+          status('fallback')
+          downloadZPL(content, filename)
+          resolve('download')
+        }
+      )
+    })
   }
+
+  // ── Método 2: Servidor local (textlabel-print bridge) ──
+  try {
+    status('bridge')
+    const res = await fetch('http://localhost:9191/print', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: content,
+      signal: AbortSignal.timeout(3000),
+    })
+    if (res.ok) {
+      status('ok')
+      return 'bridge'
+    }
+  } catch {}
+
+  // ── Método 3: Download ──
+  status('download')
+  downloadZPL(content, filename)
+  return 'download'
 }
