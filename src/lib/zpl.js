@@ -59,68 +59,26 @@ export function buildZPLCiclo(baseRecord, config, totalFusos) {
   return zpls.join('\n')
 }
 
+// Download silencioso — salva como .txt para evitar bloqueio do Windows Defender
+// e evitar que o Chrome abra o diálogo de impressão
 export function downloadZPL(content, filename) {
-  const blob = new Blob([content], { type: 'application/octet-stream' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  // Salva como .txt para evitar bloqueio do Windows Defender
-  // O monitor MONITOR-USB.bat processa arquivos .txt com prefixo C_
   const safeName = (filename || `etiqueta_${Date.now()}.zpl`).replace('.zpl', '.txt')
+  const blob = new Blob([content], { type: 'application/octet-stream' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
   a.download = safeName
+  a.style.display = 'none'
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(a.href)
+  // Pequeno delay antes de revogar para garantir o download
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }, 500)
 }
 
-// ─── IMPRESSÃO DIRETA ──────────────────────────────────
-// Tenta 3 métodos em ordem:
-// 1. Zebra BrowserPrint SDK (se instalado)
-// 2. Servidor local textlabel-print (porta 9100 bridge)
-// 3. Fallback: download do arquivo .zpl
-
-export async function printZPL(content, filename, onStatus) {
-  const status = onStatus || (() => {})
-
-  // ── Método 1: Zebra BrowserPrint ──
-  if (window.BrowserPrint) {
-    status('browserprint')
-    return new Promise(resolve => {
-      window.BrowserPrint.getDefaultDevice('printer',
-        dev => {
-          dev.send(content,
-            () => { status('ok'); resolve('browserprint') },
-            err => {
-              status('fallback')
-              downloadZPL(content, filename)
-              resolve('download')
-            }
-          )
-        },
-        () => {
-          status('fallback')
-          downloadZPL(content, filename)
-          resolve('download')
-        }
-      )
-    })
-  }
-
-  // ── Método 2: Servidor local (textlabel-print bridge) ──
-  try {
-    status('bridge')
-    const res = await fetch('http://127.0.0.1:9191/print', {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: content,
-      signal: AbortSignal.timeout(3000),
-    })
-    if (res.ok) {
-      status('ok')
-      return 'bridge'
-    }
-  } catch {}
-
-  // ── Método 3: Download ──
-  status('download')
+export async function printZPL(content, filename) {
   downloadZPL(content, filename)
   return 'download'
 }
