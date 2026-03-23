@@ -6,7 +6,7 @@ import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, auth,
 } from '../lib/firebase'
-import { buildZPLCiclo, buildZPL, printZPL, downloadZPL } from '../lib/zpl'
+import { buildZPLCiclo, buildZPLDuplo, buildZPL, printZPL, downloadZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
 const EMPTY = {
@@ -67,7 +67,11 @@ export function ProducaoPage() {
   }
 
   const zplPreview = (form.produto && form.lote && form.maquina)
-    ? buildZPL({ ...form, fuso: 1, ciclo: cicloPreview || 1 }, zplConfig)
+    ? buildZPLDuplo(
+        { ...form, fuso: 1, ciclo: cicloPreview || 1 },
+        { ...form, fuso: 2, ciclo: cicloPreview || 1 },
+        zplConfig
+      )
     : ''
 
   async function emitir() {
