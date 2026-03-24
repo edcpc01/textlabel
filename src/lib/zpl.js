@@ -90,18 +90,15 @@ function blocoEtiqueta(record, ox, oy, L) {
 
   return `
 ^FO${xL},${y1}^FB${W},1,0,C^A0N,${fEmp.h},${fEmp.w}^FD${emp}^FS
-^FO${xL},${ySep1}^GB${W},1,1^FS
 ^FO${xL},${y2}^FB${W},1,0,C^A0N,${fCnpj.h},${fCnpj.w}^FD${cnpjStr}^FS
 ^FO${xL},${y3}^FB${W},1,0,C^A0N,${fDesc.h},${fDesc.w}^FD${desc}^FS
 ^FO${xL},${y4}^FB${W},1,0,C^A0N,${fComp.h},${fComp.w}^FD${comp}^FS
-^FO${xL},${ySep2}^GB${W},1,1^FS
 ^FO${xC1},${yLbl}^FB${L.colMaq},1,0,C^A0N,${fLbl.h},${fLbl.w}^FDMaquina^FS
 ^FO${xC2},${yLbl}^FB${L.colCiclo},1,0,C^A0N,${fLbl.h},${fLbl.w}^FDCiclo^FS
 ^FO${xC3},${yLbl}^FB${colF},1,0,C^A0N,${fLbl.h},${fLbl.w}^FDFuso^FS
 ^FO${xC1},${yVal}^FB${L.colMaq},1,0,C^A0N,${fMaq.h},${fMaq.w}^FD${maq}^FS
 ^FO${xC2},${yVal}^FB${L.colCiclo},1,0,C^A0N,${fMaq.h},${fMaq.w}^FD${cicloStr}^FS
 ^FO${xC3},${yVal}^FB${colF},1,0,C^A0N,${fFuso.h},${fFuso.w}^FD${fusoStr}^FS
-^FO${xL},${ySep3}^GB${W},1,1^FS
 ^FO${xL},${yLote}^FB${Math.floor(W/2)},1,0,C^A0N,${fLote.h},${fLote.w}^FDLote: ${loteStr}^FS
 ^FO${xL+Math.floor(W/2)},${yLote}^FB${Math.ceil(W/2)},1,0,C^A0N,${fLote.h},${fLote.w}^FD${dataFmt}^FS`
 }
