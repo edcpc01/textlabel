@@ -50,7 +50,7 @@ function blocoEtiqueta(record, ox, oy) {
 }
 
 // 6 etiquetas: 3 linhas × 2 colunas
-export function buildZPLDuplo(rec1, rec2, config = {}) {
+export function buildZPLDuplo(rec1, rec2, config = {}, totalFusos = 99999) {
   const { vel = 3, dens = 15, offx = 0 } = config
   const H = 236  // altura de cada etiqueta em dots (30mm)
 
@@ -59,6 +59,10 @@ export function buildZPLDuplo(rec1, rec2, config = {}) {
   // linha 1: fuso N+2 e N+3  (incrementa 2 a cada linha)
   const f1 = Number(rec1.fuso)
   const f2 = Number(rec2.fuso)
+
+  // Só imprime etiquetas para fusos dentro do total — os demais ficam em branco
+  const bloco = (rec, fuso, ox, oy) =>
+    fuso <= totalFusos ? blocoEtiqueta({ ...rec, fuso }, ox, oy) : ''
 
   return `^XA
 ^MMT
@@ -69,25 +73,43 @@ export function buildZPLDuplo(rec1, rec2, config = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-${blocoEtiqueta({ ...rec1, fuso: f1   }, 0,       0    )}
-${blocoEtiqueta({ ...rec2, fuso: f2   }, 393,     0    )}
-${blocoEtiqueta({ ...rec1, fuso: f1+2 }, 0,       H    )}
-${blocoEtiqueta({ ...rec2, fuso: f2+2 }, 393,     H    )}
-${blocoEtiqueta({ ...rec1, fuso: f1+4 }, 0,       H*2  )}
-${blocoEtiqueta({ ...rec2, fuso: f2+4 }, 393,     H*2  )}
+${bloco(rec1, f1,   0,   0  )}
+${bloco(rec2, f2,   393, 0  )}
+${bloco(rec1, f1+2, 0,   H  )}
+${bloco(rec2, f2+2, 393, H  )}
+${bloco(rec1, f1+4, 0,   H*2)}
+${bloco(rec2, f2+4, 393, H*2)}
 ^PQ1,0,1,Y
 ^XZ`
 }
 
 // Gera o ZPL completo do ciclo — 6 etiquetas por bloco (3 linhas × 2 colunas)
+// Ordem INVERSA: imprime do maior fuso para o menor
+// Último a ser impresso = fuso 1-6 (fica no topo do rolo ao desenrolar)
+// Exemplo para 72 fusos:
+//   1º arquivo impresso: fusos 67,68 / 69,70 / 71,72
+//   2º arquivo impresso: fusos 61,62 / 63,64 / 65,66
+//   ...
+//   12º arquivo impresso: fusos 1,2 / 3,4 / 5,6
 export function buildZPLCiclo(baseRecord, config, totalFusos) {
   const zpls = []
-  // Pula de 6 em 6 (bloco de 6 etiquetas por impressão)
-  for (let fuso = 1; fuso <= totalFusos; fuso += 6) {
+  const totalBlocos = Math.ceil(totalFusos / 6)
+
+  // Ordem INVERSA: último bloco primeiro
+  // Ex 72 fusos: 67-72, 61-66, ..., 1-6
+  // Ex 40 fusos: 37-40(parcial), 31-36, ..., 1-6
+  for (let bloco = totalBlocos; bloco >= 1; bloco--) {
+    const fusoInicio = (bloco - 1) * 6 + 1
+
+    // Clamp: não ultrapassa o total de fusos
+    // Se fuso não existe, repete o último válido (etiqueta em branco não desperdiça papel)
+    const f = (n) => Math.min(n, totalFusos)
+
     const zpl = buildZPLDuplo(
-      { ...baseRecord, fuso: fuso },
-      { ...baseRecord, fuso: fuso + 1 },
-      config
+      { ...baseRecord, fuso: f(fusoInicio) },
+      { ...baseRecord, fuso: f(fusoInicio + 1) },
+      config,
+      totalFusos  // passa o total para marcar fusos inválidos como vazio
     )
     zpls.push(zpl)
   }
