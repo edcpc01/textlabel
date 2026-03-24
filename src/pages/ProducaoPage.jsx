@@ -221,7 +221,20 @@ export function ProducaoPage() {
               </div>
             </div>
           </div>
-      </div>
+
+          {/* Coluna direita — Preview */}
+          <div>
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title">PREVIEW — FUSO 1</span>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} />
+              </div>
+            </div>
+          </div>
+
+        </div>
     </div>
   )
 }
