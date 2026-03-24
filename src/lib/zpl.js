@@ -1,6 +1,6 @@
 // src/lib/zpl.js
 // Zebra ZT230 — 200dpi — 50×30mm — 2 colunas × 3 linhas
-// H=236 dots | W=393 dots por coluna
+// H=236 dots | Papel total=786 dots (2×393)
 
 export const LAYOUT_DEFAULT = {
   fontEmpresa : '20,20',
@@ -14,7 +14,7 @@ export const LAYOUT_DEFAULT = {
   fontLote    : '30,30',
   colMaq      : 135,
   colCiclo    : 95,
-  margemX     : 14,
+  margemX     : 14,   // margem lateral base (ajustável)
   margemTop   : 8,
   espacamento : 2,
 }
@@ -24,13 +24,13 @@ function parseFont(s) {
   return { h: h || 16, w: w || 14 }
 }
 
+// ox=0 → coluna esquerda | ox=393 → coluna direita
 function blocoEtiqueta(record, ox, oy, L) {
   const cicloStr = String(record.ciclo || 1).padStart(2, '0')
   const dataFmt  = record.data ? record.data.split('-').reverse().join('/') : ''
   const compTit  = [record.composicao, record.titulo ? `${record.titulo}TEX` : '']
                     .filter(Boolean).join(' - ')
 
-  // Aumentado para 34 chars para não cortar "LTDA"
   const emp     = (record.empresa   || '').slice(0, 34)
   const cnpjStr = record.cnpj ? `CNPJ: ${record.cnpj}` : ''
   const desc    = (record.descricao || '').slice(0, 32)
@@ -50,41 +50,38 @@ function blocoEtiqueta(record, ox, oy, L) {
 
   const sp = Number(L.espacamento) || 2
   const mT = Number(L.margemTop)   || 8
-  const mX = Number(L.margemX)     || 8
+  const mX = Number(L.margemX)     || 14
 
-  const W   = 393 - mX * 2   // largura interna
-  const xL  = ox + mX
+  // ── Margens independentes por coluna ──
+  // Coluna esquerda (ox=0): precisa de margem maior à ESQUERDA
+  // Coluna direita (ox=393): precisa de margem maior à DIREITA
+  // Isso compensa o offset físico da impressora em cada lado
+  const isLeft = ox === 0
+  const mLeft  = isLeft ? mX + 6 : mX      // col esq tem +6 dots à esquerda
+  const mRight = isLeft ? mX     : mX + 6  // col dir tem +6 dots à direita
 
+  const W  = 393 - mLeft - mRight  // largura do texto (~351 dots)
+  const xL = ox + mLeft            // início do texto
+
+  // Colunas Máq/Ciclo/Fuso proporcionais a W
   const colF = W - L.colMaq - L.colCiclo
   const xC1  = xL
   const xC2  = xL + L.colMaq
   const xC3  = xL + L.colMaq + L.colCiclo
 
-  // ── Y dinâmico ──────────────────────────────
-  // Ordem: Empresa → Sep → CNPJ → Descrição → Composição
-  //        → Sep → Labels → Valores → Sep → Lote/Data
+  // ── Y dinâmico ──
   let y = oy + mT
 
-  const y1    = y;  y += fEmp.h + sp          // L1 Empresa
-
-  // Linha separadora ABAIXO da Empresa, ANTES do CNPJ
+  const y1    = y;  y += fEmp.h  + sp
   const ySep1 = y;  y += 3 + sp
-
-  const y2    = y;  y += fCnpj.h + sp         // L2 CNPJ
-  const y3    = y;  y += fDesc.h + sp          // L3 Descrição
-  const y4    = y;  y += fComp.h + sp + 1      // L4 Composição
-
-  // Separador antes de Máq/Ciclo/Fuso
+  const y2    = y;  y += fCnpj.h + sp
+  const y3    = y;  y += fDesc.h + sp
+  const y4    = y;  y += fComp.h + sp + 1
   const ySep2 = y;  y += 3 + sp
-
-  const yLbl  = y;  y += fLbl.h + 1            // Labels
+  const yLbl  = y;  y += fLbl.h  + 1
   const hVal  = Math.max(fMaq.h, fFuso.h)
-  const yVal  = y;  y += hVal + sp             // Valores
-
-  // Separador antes de Lote/Data
+  const yVal  = y;  y += hVal    + sp
   const ySep3 = y;  y += 3 + sp
-
-  // Lote/Data — empurra para baixo se sobrar espaço
   const H_ETQ = 236
   const yLote = Math.min(y, oy + H_ETQ - fLote.h - 4)
 
