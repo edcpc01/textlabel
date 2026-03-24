@@ -6,8 +6,7 @@ import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
 } from '../lib/firebase'
-import { LAYOUT_DEFAULT } from '../lib/zpl'
-import { buildZPLCiclo, buildZPLDuplo, buildZPL, printZPL } from '../lib/zpl'
+import { LAYOUT_DEFAULT, buildZPLCiclo, printZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
 const EMPTY = {
@@ -17,13 +16,13 @@ const EMPTY = {
 }
 
 export function ProducaoPage() {
-  const [form, setForm]           = useState(EMPTY)
-  const [produtos, setProdutos]   = useState([])
-  const [maquinas, setMaquinas]   = useState([])
+  const [form, setForm]                 = useState(EMPTY)
+  const [produtos, setProdutos]         = useState([])
+  const [maquinas, setMaquinas]         = useState([])
   const [cicloPreview, setCicloPreview] = useState(null)
   const [configImpressora, setConfigImpressora] = useState({})
-  const [loading, setLoading]     = useState(false)
-  const [layout, setLayoutData]    = useState(LAYOUT_DEFAULT)
+  const [loading, setLoading]           = useState(false)
+  const [layout, setLayoutData]         = useState(LAYOUT_DEFAULT)
 
   useEffect(() => {
     const u1 = onProdutos(setProdutos)
@@ -60,7 +59,7 @@ export function ProducaoPage() {
   const zplConfig = {
     vel:  configImpressora.vel  || 3,
     dens: configImpressora.dens || 15,
-    offx: configImpressora.offx || 0,
+    offx: configImpressora.offx ?? -24,
   }
 
   async function emitir() {
@@ -105,6 +104,7 @@ export function ProducaoPage() {
         <p className="page-subtitle">Emissão de ciclos — cada ciclo gera uma etiqueta por fuso automaticamente</p>
       </div>
 
+      {/* STATS */}
       <div className="stat-grid">
         <div className="stat-card">
           <div className="stat-label">Próximo Ciclo</div>
@@ -138,8 +138,12 @@ export function ProducaoPage() {
           </div>
         </div>
       </div>
+
+      {/* CONTEÚDO PRINCIPAL — 2 colunas */}
       <div className="two-col">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* COLUNA ESQUERDA — Formulário */}
+        <div>
           <div className="card">
             <div className="card-header">
               <span className="card-title">DADOS DO CICLO</span>
@@ -221,20 +225,21 @@ export function ProducaoPage() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Coluna direita — Preview */}
-          <div>
-            <div className="card">
-              <div className="card-header">
-                <span className="card-title">PREVIEW — FUSO 1</span>
-              </div>
-              <div className="card-body" style={{ padding: 0 }}>
-                <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} />
-              </div>
+        {/* COLUNA DIREITA — Preview */}
+        <div>
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title">PREVIEW — FUSO 1</span>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} />
             </div>
           </div>
-
         </div>
+
+      </div>
     </div>
   )
 }
