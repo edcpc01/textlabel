@@ -58,7 +58,7 @@ function blocoEtiqueta(record, ox, oy, L) {
   // Isso compensa o offset físico da impressora em cada lado
   const isLeft = ox === 0
   const mLeft  = isLeft ? mX + 6 : mX      // col esq tem +6 dots à esquerda
-  const mRight = isLeft ? mX     : mX + 6  // col dir tem +6 dots à direita
+  const mRight = isLeft ? mX     : mX + 16 // col dir tem +16 dots à direita
 
   const W  = 393 - mLeft - mRight  // largura do texto (~351 dots)
   const xL = ox + mLeft            // início do texto
@@ -107,8 +107,8 @@ export function buildZPL(record, config = {}, layout = {}) {
 
 export function buildZPLDuplo(rec1, rec2, config = {}, totalFusos = 99999, layout = {}) {
   const L  = { ...LAYOUT_DEFAULT, ...layout }
-  const { vel = 3, dens = 15, offx = 0 } = config
-  const lshift = offx || 24  // offset físico padrão da ZT230
+  const { vel = 3, dens = 15, offx = -24 } = config
+  const lshift = offx  // offset físico da ZT230
   const H  = 236
   const f1 = Number(rec1.fuso)
   const f2 = Number(rec2.fuso)

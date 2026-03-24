@@ -24,18 +24,12 @@ export function ProducaoPage() {
   const [configImpressora, setConfigImpressora] = useState({})
   const [loading, setLoading]     = useState(false)
   const [layout, setLayoutData]    = useState(LAYOUT_DEFAULT)
-  const [printStatus, setPrintStatus] = useState(null) // null | 'ok' | 'download' | 'error'
-  const [bridgeOk, setBridgeOk]   = useState(null)  // null=checking, true, false
 
   useEffect(() => {
     const u1 = onProdutos(setProdutos)
     const u2 = onMaquinas(setMaquinas)
     getEmpresa().then(setConfigImpressora)
     getLayout().then(setLayoutData)
-    // Verifica se o Print Bridge local está rodando
-    fetch('http://127.0.0.1:9191/ping', { signal: AbortSignal.timeout(2000) })
-      .then(r => r.json()).then(d => setBridgeOk(d.ok === true))
-      .catch(() => setBridgeOk(false))
     return () => { u1(); u2() }
   }, [])
 
@@ -101,8 +95,7 @@ export function ProducaoPage() {
 
       const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
       const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
-      const method = await printZPL(zplAll, filename)
-      setPrintStatus(method === 'download' ? 'download' : 'ok')
+      await printZPL(zplAll, filename)
 
       setCicloPreview(ciclo + 1)
       toast.success(`✓ Ciclo ${String(ciclo).padStart(3,'0')} — ${nFusos} etiquetas (${form.maquina} / ${form.lote})`)
@@ -153,44 +146,6 @@ export function ProducaoPage() {
           </div>
         </div>
       </div>
-
-      {/* PAINEL STATUS IMPRESSORA */}
-      <div style={{
-        marginBottom: 16, padding: '10px 16px', borderRadius: 4,
-        display: 'flex', alignItems: 'center', gap: 12,
-        background: bridgeOk === true
-          ? 'rgba(0,229,160,.07)' : bridgeOk === false
-          ? 'rgba(255,68,102,.07)' : 'rgba(90,122,154,.07)',
-        border: `1px solid ${bridgeOk === true ? 'rgba(0,229,160,.25)' : bridgeOk === false ? 'rgba(255,68,102,.25)' : 'rgba(90,122,154,.2)'}`,
-        fontSize: '.78rem',
-      }}>
-        <div style={{
-          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-          background: bridgeOk === true ? 'var(--green)' : bridgeOk === false ? 'var(--red)' : 'var(--muted)',
-          boxShadow: bridgeOk === true ? '0 0 6px var(--green)' : 'none',
-        }} />
-        <span style={{ color: bridgeOk === true ? 'var(--green)' : bridgeOk === false ? 'var(--red)' : 'var(--muted)' }}>
-          {bridgeOk === null && 'Verificando conexão com a impressora...'}
-          {bridgeOk === true  && '✓ Print Bridge conectado — impressão direta ativada'}
-          {bridgeOk === false && '⚠ Print Bridge não detectado — o ZPL será baixado como arquivo'}
-        </span>
-        {bridgeOk === false && (
-          <a href="#" style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: '.72rem', textDecoration: 'none' }}
-            onClick={e => { e.preventDefault()
-              fetch('http://127.0.0.1:9191/ping', { signal: AbortSignal.timeout(2000) })
-                .then(r => r.json()).then(d => setBridgeOk(d.ok === true)).catch(() => setBridgeOk(false))
-            }}>
-            ↻ Tentar novamente
-          </a>
-        )}
-        {printStatus === 'ok' && bridgeOk && (
-          <span style={{ marginLeft: 'auto', color: 'var(--green)', fontWeight: 600 }}>✓ Última emissão impressa com sucesso</span>
-        )}
-        {printStatus === 'download' && (
-          <span style={{ marginLeft: 'auto', color: 'var(--orange)' }}>↓ Arquivo ZPL baixado — envie para a impressora</span>
-        )}
-      </div>
-
       <div className="two-col">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="card">
