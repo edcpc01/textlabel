@@ -14,7 +14,7 @@ export const LAYOUT_DEFAULT = {
   fontLote    : '30,30',
   colMaq      : 135,
   colCiclo    : 95,
-  margemX     : 8,
+  margemX     : 14,
   margemTop   : 8,
   espacamento : 2,
 }
