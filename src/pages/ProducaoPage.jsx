@@ -4,7 +4,7 @@ import { Printer, Copy, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
-  emitirCiclo, getCicloAtualLoteMaq, getEmpresa, auth,
+  emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, LAYOUT_DEFAULT, auth,
 } from '../lib/firebase'
 import { buildZPLCiclo, buildZPLDuplo, buildZPL, printZPL, downloadZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
@@ -22,6 +22,7 @@ export function ProducaoPage() {
   const [cicloPreview, setCicloPreview] = useState(null)
   const [configImpressora, setConfigImpressora] = useState({})
   const [loading, setLoading]     = useState(false)
+  const [layout, setLayoutData]    = useState(LAYOUT_DEFAULT)
   const [printStatus, setPrintStatus] = useState(null) // null | 'ok' | 'download' | 'error'
   const [bridgeOk, setBridgeOk]   = useState(null)  // null=checking, true, false
 
@@ -29,6 +30,7 @@ export function ProducaoPage() {
     const u1 = onProdutos(setProdutos)
     const u2 = onMaquinas(setMaquinas)
     getEmpresa().then(setConfigImpressora)
+    getLayout().then(setLayoutData)
     // Verifica se o Print Bridge local está rodando
     fetch('http://127.0.0.1:9191/ping', { signal: AbortSignal.timeout(2000) })
       .then(r => r.json()).then(d => setBridgeOk(d.ok === true))
@@ -96,7 +98,7 @@ export function ProducaoPage() {
         userName:     user?.displayName || user?.email || '',
       })
 
-      const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos)
+      const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
       const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
       const method = await printZPL(zplAll, filename)
       setPrintStatus(method === 'download' ? 'download' : 'ok')
