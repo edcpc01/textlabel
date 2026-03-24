@@ -1,13 +1,13 @@
 // src/pages/ProducaoPage.jsx
 import { useState, useEffect } from 'react'
-import { Printer, Copy, Download } from 'lucide-react'
+import { Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
 } from '../lib/firebase'
 import { LAYOUT_DEFAULT } from '../lib/zpl'
-import { buildZPLCiclo, buildZPLDuplo, buildZPL, printZPL, downloadZPL } from '../lib/zpl'
+import { buildZPLCiclo, buildZPLDuplo, buildZPL, printZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
 const EMPTY = {
@@ -62,14 +62,6 @@ export function ProducaoPage() {
     dens: configImpressora.dens || 15,
     offx: configImpressora.offx || 0,
   }
-
-  const zplPreview = (form.produto && form.lote && form.maquina)
-    ? buildZPLDuplo(
-        { ...form, fuso: 1, ciclo: cicloPreview || 1 },
-        { ...form, fuso: 2, ciclo: cicloPreview || 1 },
-        zplConfig
-      )
-    : ''
 
   async function emitir() {
     const erros = []
@@ -229,44 +221,6 @@ export function ProducaoPage() {
               </div>
             </div>
           </div>
-
-          <div className="card no-print">
-            <div className="card-header">
-              <span className="card-title">ZPL — Zebra ZT230 · 200dpi · 50×30mm</span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-ghost btn-sm"
-                  onClick={() => navigator.clipboard?.writeText(zplPreview).then(() => toast.success('ZPL copiado!'))}>
-                  <Copy size={13} /> Copiar
-                </button>
-                <button className="btn btn-ghost btn-sm"
-                  onClick={() => zplPreview && downloadZPL(zplPreview, `preview_fuso1_${Date.now()}.zpl`)}>
-                  <Download size={13} /> Download
-                </button>
-              </div>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <div className="zpl-box">
-                {zplPreview || '// Selecione Máquina, Lote e Produto para gerar o ZPL...'}
-              </div>
-            </div>
-            {zplPreview && (
-              <div style={{ padding: '8px 14px', fontSize: '.7rem', color: 'var(--muted)', borderTop: '1px solid var(--border)' }}>
-                Preview do fuso 1. O arquivo final conterá todos os {totalFusos} fusos.
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Preview — Fuso 1</span>
-            </div>
-            <div className="card-body" style={{ padding: 0 }}>
-              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )

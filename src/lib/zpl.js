@@ -58,7 +58,7 @@ function blocoEtiqueta(record, ox, oy, L) {
   // Isso compensa o offset físico da impressora em cada lado
   const isLeft = ox === 0
   const mLeft  = isLeft ? mX + 6 : mX      // col esq tem +6 dots à esquerda
-  const mRight = isLeft ? mX     : mX + 16 // col dir tem +16 dots à direita
+  const mRight = isLeft ? mX     : mX + 24 // col dir tem +24 dots à direita
 
   const W  = 393 - mLeft - mRight  // largura do texto (~351 dots)
   const xL = ox + mLeft            // início do texto
