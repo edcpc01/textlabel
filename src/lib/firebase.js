@@ -159,24 +159,13 @@ export async function setEmpresa(data) {
 }
 
 // ─── LAYOUT DA ETIQUETA ────────────────────────────────
-export const LAYOUT_DEFAULT = {
-  fontEmpresa : '18,18',
-  fontCnpj    : '15,14',
-  fontDesc    : '16,15',
-  fontComp    : '14,13',
-  fontLabel   : '11,10',
-  fontMaq     : '24,22',
-  fontCiclo   : '24,22',
-  fontFuso    : '36,34',
-  fontLote    : '15,14',
-  colMaq      : 135,
-  colCiclo    : 95,
-  margemX     : 6,
-}
+// LAYOUT_DEFAULT está definido em src/lib/zpl.js
+import { LAYOUT_DEFAULT } from './zpl.js'
+export { LAYOUT_DEFAULT }
 
 export async function getLayout() {
   const snap = await getDoc(doc(db, 'meta', 'layout'))
-  return snap.exists() ? { ...LAYOUT_DEFAULT, ...snap.data() } : LAYOUT_DEFAULT
+  return snap.exists() ? { ...LAYOUT_DEFAULT, ...snap.data() } : { ...LAYOUT_DEFAULT }
 }
 export async function setLayout(data) {
   return setDoc(doc(db, 'meta', 'layout'), data, { merge: true })

@@ -4,8 +4,9 @@ import { Printer, Copy, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
-  emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, LAYOUT_DEFAULT, auth,
+  emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
 } from '../lib/firebase'
+import { LAYOUT_DEFAULT } from '../lib/zpl'
 import { buildZPLCiclo, buildZPLDuplo, buildZPL, printZPL, downloadZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 

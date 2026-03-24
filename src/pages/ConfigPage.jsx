@@ -4,8 +4,9 @@ import { Save, AlertTriangle, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   getEmpresa, setEmpresa, onCiclos, setCicloManualLoteMaq,
-  getLayout, setLayout, LAYOUT_DEFAULT,
+  getLayout, setLayout,
 } from '../lib/firebase'
+import { LAYOUT_DEFAULT } from '../lib/zpl'
 import { buildZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
@@ -170,11 +171,13 @@ export function ConfigPage() {
 
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
                   <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    Colunas Máquina/Ciclo/Fuso
+                    Espaçamento e Colunas
                   </div>
+                  <NumSlider label="Espaçamento entre linhas" value={layout.espacamento ?? 2} min={0} max={10} onChange={v => setLayoutLocal(l => ({...l, espacamento: v}))} />
+                  <NumSlider label="Margem superior (topo)" value={layout.margemTop ?? 4} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemTop: v}))} />
                   <NumSlider label="Largura col. Máquina" value={layout.colMaq} min={80} max={200} onChange={v => setLayoutLocal(l => ({...l, colMaq: v}))} />
                   <NumSlider label="Largura col. Ciclo" value={layout.colCiclo} min={60} max={160} onChange={v => setLayoutLocal(l => ({...l, colCiclo: v}))} />
-                  <NumSlider label="Margem interna (X)" value={layout.margemX} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemX: v}))} />
+                  <NumSlider label="Margem lateral (X)" value={layout.margemX} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemX: v}))} />
                 </div>
               </div>
             </div>
