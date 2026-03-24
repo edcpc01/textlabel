@@ -108,6 +108,7 @@ export function buildZPL(record, config = {}, layout = {}) {
 export function buildZPLDuplo(rec1, rec2, config = {}, totalFusos = 99999, layout = {}) {
   const L  = { ...LAYOUT_DEFAULT, ...layout }
   const { vel = 3, dens = 15, offx = 0 } = config
+  const lshift = offx || 24  // offset físico padrão da ZT230
   const H  = 236
   const f1 = Number(rec1.fuso)
   const f2 = Number(rec2.fuso)
@@ -118,7 +119,7 @@ export function buildZPLDuplo(rec1, rec2, config = {}, totalFusos = 99999, layou
 ^MMT
 ^PW786
 ^LL${H*3}
-^LS${offx}
+^LS${lshift}
 ^LT0
 ^PR${vel},${vel}
 ~SD${dens}
