@@ -139,8 +139,8 @@ export function ProducaoPage() {
         </div>
       </div>
 
-      {/* CONTEÚDO PRINCIPAL — 2 colunas */}
-      <div className="two-col">
+      {/* CONTEÚDO PRINCIPAL — 2 colunas assimétricas */}
+      <div className="two-col" style={{ gridTemplateColumns: "1fr 1.5fr" }}>
 
         {/* COLUNA ESQUERDA — Formulário */}
         <div>
@@ -154,7 +154,7 @@ export function ProducaoPage() {
               )}
             </div>
             <div className="card-body">
-              <div className="form-grid">
+              <div className="form-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                 <div className="form-group">
                   <label className="form-label">Máquina</label>
                   <select className="form-control" value={form.maquina}
@@ -197,7 +197,7 @@ export function ProducaoPage() {
                   <input className="form-control" type="text" placeholder="230"
                     value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
                 </div>
-                <div className="form-group span2">
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="form-label">Descrição do Produto</label>
                   <input className="form-control" type="text"
                     placeholder="FIO PES TEXT. A AR SO 2X100/96DTEX CRU"
