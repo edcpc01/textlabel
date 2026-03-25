@@ -1,96 +1,105 @@
-// src/components/LabelPreview.jsx — Preview 2×3 com layout configurável
-export function LabelPreview({ record, layout = {} }) {
-  const {
-    empresa = '', cnpj = '', composicao = '', descricao = '',
-    titulo = '', maquina = '—', ciclo = 1, fuso = 1, lote = '—', data = '',
-  } = record || {}
+// src/components/LabelPreview.jsx
+// Preview fiel à etiqueta física — sem linhas, proporcional ao ZPL
+
+import { LAYOUT_DEFAULT } from '../lib/zpl'
+
+function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
+  const L = { ...LAYOUT_DEFAULT, ...layout }
 
   const {
-    colMaq   = 135,
-    colCiclo = 95,
-    margemX  = 6,
-    fontFuso = '36,34',
-    fontMaq  = '24,22',
-    fontCiclo= '24,22',
-  } = layout
+    empresa = '', cnpj = '', composicao = '', descricao = '',
+    titulo = '', maquina = '—', ciclo = 1, lote = '—', data = '',
+  } = record || {}
 
   const cicloStr = String(ciclo).padStart(2, '0')
   const dataFmt  = data ? data.split('-').reverse().join('/') : '—'
   const compTit  = [composicao, titulo ? `${titulo}TEX` : ''].filter(Boolean).join(' - ') || '—'
 
-  // Escala: etiqueta real 393×236 dots → preview 189×113px (escala 0.482)
-  // Preview menor para caber 2 colunas lado a lado
-  const W_real  = 393
-  const H_real  = 236
-  const scale   = 0.48
-  const W = Math.round(W_real * scale)  // ~189px
-  const H = Math.round(H_real * scale)  // ~113px
+  // Escala: etiqueta real = 393×236 dots → preview = 185×111px (fator ~0.47)
+  const SC = 0.47
+  const pf = (s) => {
+    const [h] = String(s).split(',').map(Number)
+    return Math.max(6, Math.round(h * SC * 0.72)) // converte dots → px aproximado
+  }
 
-  const scaleV  = (v) => Math.round(v * scale)
+  const mX   = Number(L.margemX) || 14
+  const colMaq   = Number(L.colMaq)   || 135
+  const colCiclo = Number(L.colCiclo) || 95
+  const W    = 393 - mX * 2
+  const pMaq   = colMaq   / W
+  const pCiclo = colCiclo / W
+  const pFuso  = 1 - pMaq - pCiclo
 
-  // Proporção das colunas (mesma do ZPL)
-  const totalW  = W_real - margemX * 2
-  const colF    = totalW - colMaq - colCiclo
-  const pMaq    = colMaq   / totalW
-  const pCiclo  = colCiclo / totalW
-  const pFuso   = colF     / totalW
-
-  const fFusoH  = parseInt(fontFuso.split(',')[0]) * scale
-  const fMaqH   = parseInt(fontMaq.split(',')[0])  * scale
-  const fCicloH = parseInt(fontCiclo.split(',')[0])* scale
-
-  const Cell = ({ fusoNum }) => (
+  return (
     <div style={{
-      width: W, height: H, background: '#fff', color: '#000',
-      fontFamily: 'Arial, sans-serif', display: 'flex', flexDirection: 'column',
-      overflow: 'hidden', border: '1px solid #bbb', flexShrink: 0,
-      padding: `${scaleV(4)}px ${scaleV(margemX)}px`,
-      boxSizing: 'border-box',
+      width: 185, height: 111,
+      background: '#fff', color: '#000',
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden', border: '1px solid #ccc',
+      flexShrink: 0, boxSizing: 'border-box',
+      padding: `${Math.round(Number(L.margemTop||8)*SC*0.6)}px ${Math.round(mX*SC*0.6)}px`,
     }}>
-      <div style={{ textAlign: 'center', fontSize: scaleV(9), fontWeight: 700, lineHeight: 1.2 }}>
+      {/* L1 Empresa */}
+      <div style={{ textAlign: 'center', fontSize: pf(L.fontEmpresa), fontWeight: 700, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {empresa || '— EMPRESA —'}
       </div>
-      <div style={{ textAlign: 'center', fontSize: scaleV(7.5) }}>
+      {/* L2 CNPJ */}
+      <div style={{ textAlign: 'center', fontSize: pf(L.fontCnpj), lineHeight: 1.15 }}>
         {cnpj ? `CNPJ: ${cnpj}` : '—'}
       </div>
-      <div style={{ textAlign: 'center', fontSize: scaleV(8), fontWeight: 700, lineHeight: 1.2 }}>
+      {/* L3 Descrição */}
+      <div style={{ textAlign: 'center', fontSize: pf(L.fontDesc), fontWeight: 700, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {descricao || '—'}
       </div>
-      <div style={{ textAlign: 'center', fontSize: scaleV(7), color: '#444' }}>
+      {/* L4 Composição */}
+      <div style={{ textAlign: 'center', fontSize: pf(L.fontComp), lineHeight: 1.15 }}>
         {compTit}
       </div>
-      <div style={{ borderTop: '1.5px solid #000', margin: `${scaleV(2)}px 0` }} />
-      <div style={{ display: 'flex', fontSize: scaleV(5.5), color: '#888' }}>
-        <div style={{ width: `${pMaq*100}%`, textAlign: 'center' }}>Maquina</div>
-        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center' }}>Ciclo</div>
-        <div style={{ width: `${pFuso*100}%`, textAlign: 'center' }}>Fuso</div>
+
+      {/* Labels Máq/Ciclo/Fuso */}
+      <div style={{ display: 'flex', marginTop: 2 }}>
+        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: pf(L.fontLabel), color: '#666' }}>Maquina</div>
+        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: pf(L.fontLabel), color: '#666' }}>Ciclo</div>
+        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: pf(L.fontLabel), color: '#666' }}>Fuso</div>
       </div>
+
+      {/* Valores Máq/Ciclo/Fuso */}
       <div style={{ display: 'flex', flex: 1, alignItems: 'center' }}>
-        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: fMaqH, fontWeight: 900 }}>{maquina}</div>
-        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: fCicloH, fontWeight: 900 }}>{cicloStr}</div>
-        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: fFusoH, fontWeight: 900 }}>{fusoNum}</div>
+        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: pf(L.fontMaq), fontWeight: 900, lineHeight: 1 }}>{maquina}</div>
+        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: pf(L.fontCiclo), fontWeight: 900, lineHeight: 1 }}>{cicloStr}</div>
+        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: pf(L.fontFuso), fontWeight: 900, lineHeight: 1 }}>{fusoNum}</div>
       </div>
-      <div style={{ borderTop: '1.5px solid #000', margin: `${scaleV(2)}px 0` }} />
-      <div style={{ display: 'flex', fontSize: scaleV(7) }}>
-        <div style={{ flex: 1, textAlign: 'center' }}>Lote <strong>{lote}</strong></div>
-        <div style={{ flex: 1, textAlign: 'center' }}><strong>{dataFmt}</strong></div>
+
+      {/* Lote / Data */}
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto' }}>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: pf(L.fontLote), fontWeight: 700 }}>Lote {lote}</div>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: pf(L.fontLote), fontWeight: 700 }}>{dataFmt}</div>
       </div>
     </div>
   )
+}
 
-  const fusos = [fuso, fuso+1, fuso+2, fuso+3, fuso+4, fuso+5]
+export function LabelPreview({ record, layout = {} }) {
+  const fusoBase = record?.fuso || 1
+  const fusos = [0,1,2,3,4,5].map(i => fusoBase + i)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20, minHeight: 400 }}>
-      <div style={{ border: '1px solid #666', boxShadow: '0 4px 16px rgba(0,0,0,.3)' }}>
-        {[0,1,2].map(row => (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 8, padding: 16, width: '100%', boxSizing: 'border-box',
+    }}>
+      {/* Bloco 2×3 */}
+      <div style={{ boxShadow: '0 4px 20px rgba(0,0,0,.35)', border: '1px solid #888' }}>
+        {[0, 1, 2].map(row => (
           <div key={row} style={{ display: 'flex' }}>
-            <Cell fusoNum={fusos[row*2]} />
-            <Cell fusoNum={fusos[row*2+1]} />
+            <CelulaEtiqueta record={record} fusoNum={fusos[row*2]}   layout={layout} />
+            <CelulaEtiqueta record={record} fusoNum={fusos[row*2+1]} layout={layout} />
           </div>
         ))}
       </div>
-      <div style={{ fontSize: '.65rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.7 }}>
+      <div style={{ fontSize: '.65rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6 }}>
         2 colunas × 3 linhas = 6 etiquetas · 50×30mm cada · ZT230 · 200dpi
       </div>
     </div>

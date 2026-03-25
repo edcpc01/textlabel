@@ -140,7 +140,7 @@ export function ProducaoPage() {
       </div>
 
       {/* CONTEÚDO PRINCIPAL — 2 colunas assimétricas */}
-      <div className="two-col" style={{ gridTemplateColumns: "1fr 1.5fr" }}>
+      <div className="two-col">
 
         {/* COLUNA ESQUERDA — Formulário */}
         <div>
@@ -228,8 +228,8 @@ export function ProducaoPage() {
         </div>
 
         {/* COLUNA DIREITA — Preview */}
-        <div>
-          <div className="card">
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div className="card" style={{ flex: 1 }}>
             <div className="card-header">
               <span className="card-title">PREVIEW — FUSO 1</span>
             </div>

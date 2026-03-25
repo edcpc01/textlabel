@@ -335,7 +335,8 @@ tbody tr:hover td { background: rgba(0,212,255,.03); }
 .two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px; align-items: start;
+  gap: 20px;
+  align-items: stretch;
 }
 @media (max-width: 1024px) { .two-col { grid-template-columns: 1fr; } }
 
