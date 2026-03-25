@@ -81,7 +81,7 @@ export function LabelPreview({ record, layout = {} }) {
   const fusos = [fuso, fuso+1, fuso+2, fuso+3, fuso+4, fuso+5]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20, minHeight: 400 }}>
       <div style={{ border: '1px solid #666', boxShadow: '0 4px 16px rgba(0,0,0,.3)' }}>
         {[0,1,2].map(row => (
           <div key={row} style={{ display: 'flex' }}>
