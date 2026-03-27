@@ -158,7 +158,7 @@ export function ProducaoPage() {
       <div className="two-col">
 
         {/* COLUNA ESQUERDA — Formulário */}
-        <div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <div className="card">
             <div className="card-header">
               <span className="card-title">DADOS DO CICLO</span>
