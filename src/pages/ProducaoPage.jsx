@@ -91,7 +91,7 @@ export function ProducaoPage() {
 
       // Gera e imprime os 3 formulários em impressora de rede
       gerarEImprimirFormularios({
-        maquina,
+        maquina:    form.maquina,
         lote:       form.lote,
         ciclo,
         descricao:  form.descricao,
