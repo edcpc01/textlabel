@@ -7,6 +7,7 @@ import {
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
 } from '../lib/firebase'
 import { LAYOUT_DEFAULT, buildZPLCiclo, printZPL } from '../lib/zpl'
+import { gerarEImprimirFormularios } from '../components/Formularios'
 import { LabelPreview } from '../components/LabelPreview'
 
 const EMPTY = {
@@ -87,6 +88,20 @@ export function ProducaoPage() {
       const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
       const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
       await printZPL(zplAll, filename)
+
+      // Gera e imprime os 3 formulários em impressora de rede
+      gerarEImprimirFormularios({
+        maquina,
+        lote:       form.lote,
+        ciclo,
+        descricao:  form.descricao,
+        composicao: form.composicao,
+        titulo:     form.titulo,
+        empresa:    form.empresa,
+        cnpj:       form.cnpj,
+        data:       form.data,
+        totalFusos: nFusos,
+      })
 
       setCicloPreview(ciclo + 1)
       toast.success(`✓ Ciclo ${String(ciclo).padStart(3,'0')} — ${nFusos} etiquetas (${form.maquina} / ${form.lote})`)
