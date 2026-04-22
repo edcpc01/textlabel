@@ -5,9 +5,9 @@ import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
-  getImpressoraNilit, getOrCreateOperadorCode,
+  getImpressoraNilit, getOrCreateOperadorCode, getLayoutNilit,
 } from '../lib/firebase'
-import { LAYOUT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
+import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
 import { gerarEImprimirFormularios } from '../components/Formularios'
 import { LabelPreview } from '../components/LabelPreview'
 
@@ -29,6 +29,7 @@ export function ProducaoPage() {
   const [operadorCode, setOperadorCode] = useState('0000')
   const [loading, setLoading]           = useState(false)
   const [layout, setLayoutData]         = useState(LAYOUT_DEFAULT)
+  const [layoutNilit, setLayoutNilit]   = useState(LAYOUT_NILIT_DEFAULT)
 
   useEffect(() => {
     const u1 = onProdutos(setProdutos)
@@ -36,6 +37,7 @@ export function ProducaoPage() {
     getEmpresa().then(setConfigImpressora)
     getImpressoraNilit().then(setConfigNilit)
     getLayout().then(setLayoutData)
+    getLayoutNilit().then(setLayoutNilit)
     const user = auth.currentUser
     if (user) {
       getOrCreateOperadorCode(user).then(code => {
@@ -113,7 +115,7 @@ export function ProducaoPage() {
 
       let zplAll
       if (isNilit) {
-        zplAll = buildZPLNilitCiclo({ ...form, ciclo, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos)
+        zplAll = buildZPLNilitCiclo({ ...form, ciclo, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos, layoutNilit)
       } else {
         zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
       }
@@ -301,7 +303,7 @@ export function ProducaoPage() {
               <span className="card-title">PREVIEW — FUSO 1</span>
             </div>
             <div className="card-body" style={{ padding: 0 }}>
-              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} isNilit={isNilit} />
+              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} isNilit={isNilit} layoutNilit={layoutNilit} />
             </div>
           </div>
         </div>

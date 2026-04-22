@@ -6,11 +6,11 @@ import {
   getEmpresa, setEmpresa, onCiclos, setCicloManualLoteMaq,
   getLayout, setLayout,
   getImpressoraNilit, setImpressoraNilit,
+  getLayoutNilit, setLayoutNilit,
 } from '../lib/firebase'
-import { LAYOUT_DEFAULT } from '../lib/zpl'
+import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
-// Sliders de fonte: converte "24,22" ↔ { h: 24, w: 22 }
 function FontSlider({ label, value, onChange }) {
   const [h, w] = value.split(',').map(Number)
   return (
@@ -43,13 +43,15 @@ function NumSlider({ label, value, min, max, onChange, unit = 'dots' }) {
 }
 
 export function ConfigPage() {
-  const [printer, setPrinter]       = useState({ vel: '3', dens: '15', offx: '-24' })
-  const [printerNilit, setPrinterNilit] = useState({ vel: '3', dens: '15', offx: '0' })
-  const [ciclos,  setCiclos]        = useState([])
-  const [editando, setEditando]     = useState(null)
-  const [loading, setLoading]       = useState(false)
-  const [layout, setLayoutLocal]    = useState(LAYOUT_DEFAULT)
-  const [empresa, setEmpresaLocal]  = useState({})
+  const [printer, setPrinter]             = useState({ vel: '3', dens: '15', offx: '-24' })
+  const [printerNilit, setPrinterNilit]   = useState({ vel: '3', dens: '15', offx: '0' })
+  const [ciclos,  setCiclos]              = useState([])
+  const [editando, setEditando]           = useState(null)
+  const [loading, setLoading]             = useState(false)
+  const [layout, setLayoutLocal]          = useState(LAYOUT_DEFAULT)
+  const [layoutNilit, setLayoutNilitLocal] = useState(LAYOUT_NILIT_DEFAULT)
+  const [empresa, setEmpresaLocal]        = useState({})
+  const [layoutCliente, setLayoutCliente] = useState('padrao')
 
   useEffect(() => {
     getEmpresa().then(d => {
@@ -64,6 +66,7 @@ export function ConfigPage() {
       setPrinterNilit({ vel: String(d.vel ?? 3), dens: String(d.dens ?? 15), offx: String(d.offx ?? 0) })
     })
     getLayout().then(setLayoutLocal)
+    getLayoutNilit().then(setLayoutNilitLocal)
     const unsub = onCiclos(setCiclos)
     return unsub
   }, [])
@@ -90,7 +93,16 @@ export function ConfigPage() {
     setLoading(true)
     try {
       await setLayout(layout)
-      toast.success('Layout salvo!')
+      toast.success('Layout Padrão salvo!')
+    } catch (e) { toast.error('Erro: ' + e.message) }
+    setLoading(false)
+  }
+
+  async function salvarLayoutNilit() {
+    setLoading(true)
+    try {
+      await setLayoutNilit(layoutNilit)
+      toast.success('Layout Nilit salvo!')
     } catch (e) { toast.error('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -98,6 +110,11 @@ export function ConfigPage() {
   function resetLayout() {
     setLayoutLocal(LAYOUT_DEFAULT)
     toast.success('Layout resetado para o padrão.')
+  }
+
+  function resetLayoutNilit() {
+    setLayoutNilitLocal(LAYOUT_NILIT_DEFAULT)
+    toast.success('Layout Nilit resetado para o padrão.')
   }
 
   async function salvarCicloManual() {
@@ -110,7 +127,6 @@ export function ConfigPage() {
     toast.success('Ciclo atualizado!')
   }
 
-  // Preview ao vivo com o layout atual
   const previewRecord = {
     empresa: empresa.nome || 'TECELAGEM SAO JOAO DE TIETE',
     cnpj: empresa.cnpj || '06.745.682/0001-48',
@@ -119,6 +135,17 @@ export function ConfigPage() {
     maquina: 'AIKI 1A', ciclo: 1, fuso: 1,
     lote: '6848', data: new Date().toISOString().split('T')[0],
   }
+
+  const previewNilitRecord = {
+    opacidade: 'BK', maquina: 'EFK-002', lote: '111',
+    data: new Date().toISOString().split('T')[0],
+    emissaoHora: '13:00', descricao: 'PA 6.6 55/60/2',
+    composicao: '100%', operador: '2592', po: '620680',
+    ciclo: 9, lv: 'C', fuso: 167,
+    barcode: 'B112000167',
+  }
+
+  const isNilitTab = layoutCliente === 'nilit'
 
   return (
     <div className="page-wrap">
@@ -201,40 +228,87 @@ export function ConfigPage() {
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-header">
           <span className="card-title">LAYOUT DA ETIQUETA</span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost btn-sm" onClick={resetLayout}><RefreshCw size={12} /> Resetar</button>
-            <button className="btn btn-primary btn-sm" onClick={salvarLayout} disabled={loading}><Save size={13} /> Salvar Layout</button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Seletor de cliente */}
+            <select
+              className="form-control"
+              style={{ width: 'auto', fontSize: '.78rem', padding: '4px 10px', height: 'auto' }}
+              value={layoutCliente}
+              onChange={e => setLayoutCliente(e.target.value)}
+            >
+              <option value="padrao">Padrão (São João / Rhodia)</option>
+              <option value="nilit">Nilit</option>
+            </select>
+            {isNilitTab ? (
+              <>
+                <button className="btn btn-ghost btn-sm" onClick={resetLayoutNilit}><RefreshCw size={12} /> Resetar</button>
+                <button className="btn btn-primary btn-sm" onClick={salvarLayoutNilit} disabled={loading}><Save size={13} /> Salvar Layout</button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-ghost btn-sm" onClick={resetLayout}><RefreshCw size={12} /> Resetar</button>
+                <button className="btn btn-primary btn-sm" onClick={salvarLayout} disabled={loading}><Save size={13} /> Salvar Layout</button>
+              </>
+            )}
           </div>
         </div>
         <div className="card-body">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
+
             {/* CONTROLES */}
             <div>
-              <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 16, letterSpacing: 1, textTransform: 'uppercase' }}>
-                Fontes (altura × largura em dots)
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <FontSlider label="Empresa (L1)" value={layout.fontEmpresa} onChange={v => setLayoutLocal(l => ({...l, fontEmpresa: v}))} />
-                <FontSlider label="CNPJ (L2)" value={layout.fontCnpj} onChange={v => setLayoutLocal(l => ({...l, fontCnpj: v}))} />
-                <FontSlider label="Descrição (L3)" value={layout.fontDesc} onChange={v => setLayoutLocal(l => ({...l, fontDesc: v}))} />
-                <FontSlider label="Composição (L4)" value={layout.fontComp} onChange={v => setLayoutLocal(l => ({...l, fontComp: v}))} />
-                <FontSlider label="Labels (Máq/Ciclo/Fuso)" value={layout.fontLabel} onChange={v => setLayoutLocal(l => ({...l, fontLabel: v}))} />
-                <FontSlider label="Valor Máquina" value={layout.fontMaq} onChange={v => setLayoutLocal(l => ({...l, fontMaq: v}))} />
-                <FontSlider label="Valor Ciclo" value={layout.fontCiclo} onChange={v => setLayoutLocal(l => ({...l, fontCiclo: v}))} />
-                <FontSlider label="Valor Fuso (destaque)" value={layout.fontFuso} onChange={v => setLayoutLocal(l => ({...l, fontFuso: v}))} />
-                <FontSlider label="Lote / Data" value={layout.fontLote} onChange={v => setLayoutLocal(l => ({...l, fontLote: v}))} />
-
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-                  <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' }}>
-                    Espaçamento e Colunas
+              {isNilitTab ? (
+                <>
+                  <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 16, letterSpacing: 1, textTransform: 'uppercase' }}>
+                    Nilit — Fontes (altura × largura em dots)
                   </div>
-                  <NumSlider label="Espaçamento entre linhas" value={layout.espacamento ?? 2} min={0} max={10} onChange={v => setLayoutLocal(l => ({...l, espacamento: v}))} />
-                  <NumSlider label="Margem superior (topo)" value={layout.margemTop ?? 4} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemTop: v}))} />
-                  <NumSlider label="Largura col. Máquina" value={layout.colMaq} min={80} max={200} onChange={v => setLayoutLocal(l => ({...l, colMaq: v}))} />
-                  <NumSlider label="Largura col. Ciclo" value={layout.colCiclo} min={60} max={160} onChange={v => setLayoutLocal(l => ({...l, colCiclo: v}))} />
-                  <NumSlider label="Margem lateral (X)" value={layout.margemX} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemX: v}))} />
-                </div>
-              </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <FontSlider label="Código (L1 — BK02111)" value={layoutNilit.fontCode} onChange={v => setLayoutNilitLocal(l => ({...l, fontCode: v}))} />
+                    <FontSlider label="Data / Hora (L1 direita)" value={layoutNilit.fontDate} onChange={v => setLayoutNilitLocal(l => ({...l, fontDate: v}))} />
+                    <FontSlider label="Linha 2 — Produto / Máq / Comp / Op" value={layoutNilit.fontL2} onChange={v => setLayoutNilitLocal(l => ({...l, fontL2: v}))} />
+                    <FontSlider label="Linha 3 — PO / CG / LV / POS" value={layoutNilit.fontL3} onChange={v => setLayoutNilitLocal(l => ({...l, fontL3: v}))} />
+                    <FontSlider label="Texto do Barcode" value={layoutNilit.fontBarcode} onChange={v => setLayoutNilitLocal(l => ({...l, fontBarcode: v}))} />
+
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                      <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' }}>
+                        Barcode e Margens
+                      </div>
+                      <NumSlider label="Altura do Barcode" value={layoutNilit.barcodeHeight} min={40} max={160} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeHeight: v}))} />
+                      <NumSlider label="Módulo do Barcode (largura barras)" value={layoutNilit.barcodeModule} min={1} max={4} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeModule: v}))} />
+                      <NumSlider label="Margem superior (topo)" value={layoutNilit.margemTop} min={0} max={30} onChange={v => setLayoutNilitLocal(l => ({...l, margemTop: v}))} />
+                      <NumSlider label="Margem lateral (X)" value={layoutNilit.margemX} min={0} max={30} onChange={v => setLayoutNilitLocal(l => ({...l, margemX: v}))} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 16, letterSpacing: 1, textTransform: 'uppercase' }}>
+                    Fontes (altura × largura em dots)
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <FontSlider label="Empresa (L1)" value={layout.fontEmpresa} onChange={v => setLayoutLocal(l => ({...l, fontEmpresa: v}))} />
+                    <FontSlider label="CNPJ (L2)" value={layout.fontCnpj} onChange={v => setLayoutLocal(l => ({...l, fontCnpj: v}))} />
+                    <FontSlider label="Descrição (L3)" value={layout.fontDesc} onChange={v => setLayoutLocal(l => ({...l, fontDesc: v}))} />
+                    <FontSlider label="Composição (L4)" value={layout.fontComp} onChange={v => setLayoutLocal(l => ({...l, fontComp: v}))} />
+                    <FontSlider label="Labels (Máq/Ciclo/Fuso)" value={layout.fontLabel} onChange={v => setLayoutLocal(l => ({...l, fontLabel: v}))} />
+                    <FontSlider label="Valor Máquina" value={layout.fontMaq} onChange={v => setLayoutLocal(l => ({...l, fontMaq: v}))} />
+                    <FontSlider label="Valor Ciclo" value={layout.fontCiclo} onChange={v => setLayoutLocal(l => ({...l, fontCiclo: v}))} />
+                    <FontSlider label="Valor Fuso (destaque)" value={layout.fontFuso} onChange={v => setLayoutLocal(l => ({...l, fontFuso: v}))} />
+                    <FontSlider label="Lote / Data" value={layout.fontLote} onChange={v => setLayoutLocal(l => ({...l, fontLote: v}))} />
+
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                      <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' }}>
+                        Espaçamento e Colunas
+                      </div>
+                      <NumSlider label="Espaçamento entre linhas" value={layout.espacamento ?? 2} min={0} max={10} onChange={v => setLayoutLocal(l => ({...l, espacamento: v}))} />
+                      <NumSlider label="Margem superior (topo)" value={layout.margemTop ?? 4} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemTop: v}))} />
+                      <NumSlider label="Largura col. Máquina" value={layout.colMaq} min={80} max={200} onChange={v => setLayoutLocal(l => ({...l, colMaq: v}))} />
+                      <NumSlider label="Largura col. Ciclo" value={layout.colCiclo} min={60} max={160} onChange={v => setLayoutLocal(l => ({...l, colCiclo: v}))} />
+                      <NumSlider label="Margem lateral (X)" value={layout.margemX} min={0} max={20} onChange={v => setLayoutLocal(l => ({...l, margemX: v}))} />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* PREVIEW AO VIVO */}
@@ -242,7 +316,11 @@ export function ConfigPage() {
               <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginBottom: 12, letterSpacing: 1, textTransform: 'uppercase' }}>
                 Preview ao vivo
               </div>
-              <LabelPreview record={previewRecord} layout={layout} />
+              {isNilitTab ? (
+                <LabelPreview record={previewNilitRecord} isNilit={true} layoutNilit={layoutNilit} />
+              ) : (
+                <LabelPreview record={previewRecord} layout={layout} />
+              )}
             </div>
           </div>
         </div>

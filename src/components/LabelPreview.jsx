@@ -1,7 +1,7 @@
 // src/components/LabelPreview.jsx
 // Preview fiel à etiqueta física — sem linhas, proporcional ao ZPL
 
-import { LAYOUT_DEFAULT } from '../lib/zpl'
+import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT } from '../lib/zpl'
 
 function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
   const L = { ...LAYOUT_DEFAULT, ...layout }
@@ -22,13 +22,13 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
     return Math.max(6, Math.round(h * SC * 0.72)) // converte dots → px aproximado
   }
 
-  const mX   = Number(L.margemX) || 14
-  const colMaq   = Number(L.colMaq)   || 135
+  const mX      = Number(L.margemX) || 14
+  const colMaq  = Number(L.colMaq)   || 135
   const colCiclo = Number(L.colCiclo) || 95
-  const W    = 393 - mX * 2
-  const pMaq   = colMaq   / W
-  const pCiclo = colCiclo / W
-  const pFuso  = 1 - pMaq - pCiclo
+  const W       = 393 - mX * 2
+  const pMaq    = colMaq   / W
+  const pCiclo  = colCiclo / W
+  const pFuso   = 1 - pMaq - pCiclo
 
   return (
     <div style={{
@@ -80,19 +80,26 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
   )
 }
 
-function CelulaEtiquetaNilit({ record }) {
+function CelulaEtiquetaNilit({ record, layout = {} }) {
+  const L = { ...LAYOUT_NILIT_DEFAULT, ...layout }
+
   const {
     opacidade = '', maquina = '', lote = '', data = '',
     emissaoHora = '', descricao = '', composicao = '',
     operador = '', po = '', ciclo = 1, lv = 'A', fuso = 1,
   } = record || {}
 
-  const maqN   = String(maquina).replace(/\D/g, '').slice(-2).padStart(2, '0')
-  const lote3  = String(lote).replace(/\D/g, '').slice(0, 3).padStart(3, '0')
-  const code1  = `${String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')}${maqN}${lote3}`
+  // Escala: ZPL 504×276 dots → preview 240×131px
+  const SC  = 240 / 504
+  const pfH = s => { const [h] = String(s).split(',').map(Number); return Math.max(5, Math.round(h * SC)) }
+  const pD  = d => Math.max(1, Math.round(Number(d) * SC))
+
+  const maqN    = String(maquina).replace(/\D/g, '').slice(-2).padStart(2, '0')
+  const lote3   = String(lote).replace(/\D/g, '').slice(0, 3).padStart(3, '0')
+  const code1   = `${String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')}${maqN}${lote3}`
   const dateFmt = data ? data.split('-').reverse().join('/') : '—'
-  const op     = String(operador).slice(0, 4).padStart(4, '0')
-  const lvStr  = String(lv || 'A').toUpperCase()
+  const op      = String(operador).slice(0, 4).padStart(4, '0')
+  const lvStr   = String(lv || 'A').toUpperCase()
 
   return (
     <div style={{
@@ -101,42 +108,42 @@ function CelulaEtiquetaNilit({ record }) {
       fontFamily: 'Arial, Helvetica, sans-serif',
       overflow: 'hidden', border: '1px solid #ccc',
       flexShrink: 0, boxSizing: 'border-box',
-      padding: '3px 5px',
-      display: 'flex', flexDirection: 'column',
+      padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,
+      display: 'flex', flexDirection: 'column', gap: 1,
     }}>
-      {/* Linha 1 */}
+      {/* Linha 1 — código + data/hora */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
-        <div style={{ textAlign: 'right', fontSize: 7.5, fontWeight: 700, lineHeight: 1.5 }}>
+        <div style={{ fontSize: pfH(L.fontCode), fontWeight: 900, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
+        <div style={{ textAlign: 'right', fontSize: pfH(L.fontDate), fontWeight: 700, lineHeight: 1.4 }}>
           <div>{dateFmt}</div>
           <div>{emissaoHora || '—:—'}</div>
         </div>
       </div>
       {/* Separador */}
-      <div style={{ borderTop: '1.5px solid #000', margin: '2px 0' }} />
+      <div style={{ borderTop: '1.5px solid #000', margin: '1px 0' }} />
       {/* Linha 2 */}
-      <div style={{ fontSize: 7.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.5 }}>
+      <div style={{ fontSize: pfH(L.fontL2), fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
         {String(descricao || '').slice(0, 14)}&nbsp;&nbsp;{String(maquina || '').slice(0, 8)}&nbsp;&nbsp;{String(composicao || '').slice(0, 6)}&nbsp;&nbsp;6200{op}
       </div>
       {/* Linha 3 */}
-      <div style={{ fontSize: 7.5, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap' }}>
+      <div style={{ fontSize: pfH(L.fontL3), fontWeight: 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
         PO:{po || '—'}&nbsp;&nbsp;CG:{String(ciclo)}&nbsp;&nbsp;LV:{lvStr}&nbsp;&nbsp;POS:{String(fuso)}/1
       </div>
       {/* Barcode simulado */}
       <div style={{
-        flex: 1,
+        height: pD(L.barcodeHeight),
         background: 'repeating-linear-gradient(90deg, #000 0px, #000 1.5px, #fff 1.5px, #fff 3.5px)',
-        margin: '3px 0 2px',
+        margin: '2px 0 1px', flexShrink: 0,
       }} />
       {/* Texto barcode */}
-      <div style={{ fontSize: 6.5, textAlign: 'center', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+      <div style={{ fontSize: Math.max(4, pfH(L.fontBarcode) - 2), textAlign: 'center', fontFamily: 'monospace', letterSpacing: 0.5 }}>
         B — — — — — — — —
       </div>
     </div>
   )
 }
 
-export function LabelPreview({ record, layout = {}, isNilit = false }) {
+export function LabelPreview({ record, layout = {}, isNilit = false, layoutNilit = {} }) {
   if (isNilit) {
     return (
       <div style={{
@@ -145,7 +152,7 @@ export function LabelPreview({ record, layout = {}, isNilit = false }) {
         gap: 8, padding: 16, width: '100%', boxSizing: 'border-box',
       }}>
         <div style={{ boxShadow: '0 4px 20px rgba(0,0,0,.35)', border: '1px solid #888' }}>
-          <CelulaEtiquetaNilit record={record} />
+          <CelulaEtiquetaNilit record={record} layout={layoutNilit} />
         </div>
         <div style={{ fontSize: '.65rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6 }}>
           1 coluna · 64×35mm · Nilit · 200dpi

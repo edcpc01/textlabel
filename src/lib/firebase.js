@@ -234,9 +234,8 @@ export async function getOrCreateOperadorCode(user) {
 }
 
 // ─── LAYOUT DA ETIQUETA ────────────────────────────────
-// LAYOUT_DEFAULT está definido em src/lib/zpl.js
-import { LAYOUT_DEFAULT } from './zpl.js'
-export { LAYOUT_DEFAULT }
+import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT } from './zpl.js'
+export { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT }
 
 export async function getLayout() {
   const snap = await getDoc(doc(db, 'meta', 'layout'))
@@ -244,4 +243,12 @@ export async function getLayout() {
 }
 export async function setLayout(data) {
   return setDoc(doc(db, 'meta', 'layout'), data, { merge: true })
+}
+
+export async function getLayoutNilit() {
+  const snap = await getDoc(doc(db, 'meta', 'layout_nilit'))
+  return snap.exists() ? { ...LAYOUT_NILIT_DEFAULT, ...snap.data() } : { ...LAYOUT_NILIT_DEFAULT }
+}
+export async function setLayoutNilit(data) {
+  return setDoc(doc(db, 'meta', 'layout_nilit'), data, { merge: true })
 }

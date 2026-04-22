@@ -167,6 +167,18 @@ export async function printZPL(content, filename) {
 // ─── NILIT — 64×35mm — 1 coluna — 200dpi ──────────────
 // Width: 504 dots | Height: 276 dots
 
+export const LAYOUT_NILIT_DEFAULT = {
+  fontCode:      '44,38',  // Linha 1 — código (BK02111)
+  fontDate:      '22,18',  // Linha 1 — data e hora (direita)
+  fontL2:        '20,14',  // Linha 2 — produto / máquina / comp / operador
+  fontL3:        '20,14',  // Linha 3 — PO / CG / LV / POS
+  fontBarcode:   '20,16',  // Texto abaixo do barcode
+  barcodeHeight: 100,      // Altura do barcode em dots
+  barcodeModule: 2,        // Largura do módulo (BY — 1 a 4 dots)
+  margemTop:     8,
+  margemX:       8,
+}
+
 function maqNums2(maquinaCod) {
   return String(maquinaCod || '').replace(/\D/g, '').slice(-2).padStart(2, '0')
 }
@@ -175,35 +187,50 @@ function lote3d(loteStr) {
   return String(loteStr || '').replace(/\D/g, '').slice(0, 3).padStart(3, '0')
 }
 
-export function buildZPLNilit(record, config = {}) {
+export function buildZPLNilit(record, config = {}, layout = {}) {
+  const L   = { ...LAYOUT_NILIT_DEFAULT, ...layout }
   const { vel = 3, dens = 15, offx = 0 } = config
   const {
-    opacidade   = '',
-    maquina     = '',
-    lote        = '',
-    data        = '',
-    emissaoHora = '',
-    descricao   = '',
-    composicao  = '',
-    operador    = '',
-    po          = '',
-    ciclo       = 1,
-    lv          = 'A',
-    fuso        = 1,
-    barcode     = 'B000000000',
+    opacidade = '', maquina = '', lote = '', data = '',
+    emissaoHora = '', descricao = '', composicao = '',
+    operador = '', po = '', ciclo = 1, lv = 'A',
+    fuso = 1, barcode = 'B000000000',
   } = record
 
-  const opacity2  = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
-  const code1     = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
-  const dateFmt   = data ? data.split('-').reverse().join('/') : ''
-  const hora      = emissaoHora || ''
-  const desc      = String(descricao  || '').slice(0, 16)
-  const comp      = String(composicao || '').slice(0, 8)
-  const maqFull   = String(maquina    || '').slice(0, 8)
-  const op        = String(operador   || '').slice(0, 4).padStart(4, '0')
-  const cicloStr  = String(ciclo)
-  const fusoStr   = String(fuso)
-  const lvStr     = String(lv || 'A').toUpperCase().slice(0, 1)
+  const fCode = parseFont(L.fontCode)
+  const fDate = parseFont(L.fontDate)
+  const fL2   = parseFont(L.fontL2)
+  const fL3   = parseFont(L.fontL3)
+  const fBc   = parseFont(L.fontBarcode)
+  const mT    = Number(L.margemTop)     || 8
+  const mX    = Number(L.margemX)       || 8
+  const bH    = Number(L.barcodeHeight) || 100
+  const bW    = Math.max(1, Number(L.barcodeModule) || 2)
+
+  // Y dinâmico baseado no layout
+  const yCode    = mT
+  const ySep     = mT + fCode.h + 3
+  const yL2      = ySep + 5
+  const yL3      = yL2 + fL2.h + 4
+  const yBarcode = yL3 + fL3.h + 8
+  const yBcText  = yBarcode + bH + 4
+
+  // X direita — data e hora alinhadas à margem direita
+  const W     = 504 - 2 * mX
+  const xDate = 504 - mX - 10 * fDate.w                        // DD/MM/YYYY
+  const xTime = xDate + Math.floor((10 - 5) * fDate.w / 2)     // HH:MM centralizado
+
+  const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
+  const code1    = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
+  const dateFmt  = data ? data.split('-').reverse().join('/') : ''
+  const hora     = emissaoHora || ''
+  const desc     = String(descricao  || '').slice(0, 16)
+  const comp     = String(composicao || '').slice(0, 8)
+  const maqFull  = String(maquina    || '').slice(0, 8)
+  const op       = String(operador   || '').slice(0, 4).padStart(4, '0')
+  const cicloStr = String(ciclo)
+  const fusoStr  = String(fuso)
+  const lvStr    = String(lv || 'A').toUpperCase().slice(0, 1)
 
   return `^XA
 ^MMT
@@ -214,26 +241,26 @@ export function buildZPLNilit(record, config = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-^FO8,8^A0N,44,38^FD${code1}^FS
-^FO316,8^A0N,22,18^FD${dateFmt}^FS
-^FO340,31^A0N,22,18^FD${hora}^FS
-^FO8,55^GB488,1,2^FS
-^FO8,60^A0N,20,14^FB488,1,0,L^FD${desc}  ${maqFull}  ${comp}  6200${op}^FS
-^FO8,84^A0N,20,14^FB488,1,0,L^FDPO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1^FS
-^FO8,112^BY2,3,100^BCN,100,N,N^FD${barcode}^FS
-^FO8,216^FB488,1,0,C^A0N,20,16^FD${barcode}^FS
+^FO${mX},${yCode}^A0N,${fCode.h},${fCode.w}^FD${code1}^FS
+^FO${xDate},${yCode}^A0N,${fDate.h},${fDate.w}^FD${dateFmt}^FS
+^FO${xTime},${yCode + fDate.h + 1}^A0N,${fDate.h},${fDate.w}^FD${hora}^FS
+^FO${mX},${ySep}^GB${W},1,2^FS
+^FO${mX},${yL2}^A0N,${fL2.h},${fL2.w}^FB${W},1,0,L^FD${desc}  ${maqFull}  ${comp}  6200${op}^FS
+^FO${mX},${yL3}^A0N,${fL3.h},${fL3.w}^FB${W},1,0,L^FDPO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1^FS
+^FO${mX},${yBarcode}^BY${bW},3,${bH}^BCN,${bH},N,N^FD${barcode}^FS
+^FO${mX},${yBcText}^FB${W},1,0,C^A0N,${fBc.h},${fBc.w}^FD${barcode}^FS
 ^PQ1,0,1,Y
 ^XZ`
 }
 
-export function buildZPLNilitCiclo(baseRecord, config, barcodes, totalFusos) {
+export function buildZPLNilitCiclo(baseRecord, config, barcodes, totalFusos, layout = {}) {
   const zpls = []
   for (let fuso = totalFusos; fuso >= 1; fuso--) {
     zpls.push(buildZPLNilit({
       ...baseRecord,
       fuso,
       barcode: (barcodes && barcodes[fuso - 1]) || 'B000000000',
-    }, config))
+    }, config, layout))
   }
   return zpls.join('\n')
 }
