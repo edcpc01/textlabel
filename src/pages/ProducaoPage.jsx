@@ -93,8 +93,7 @@ export function ProducaoPage() {
     if (!form.composicao) erros.push('Composição')
     if (!form.descricao)  erros.push('Descrição')
     if (!totalFusos)      erros.push('Máquina sem Nº de Fusos cadastrado')
-    if (isNilit && !form.po)       erros.push('Ordem de Produção (PO)')
-    if (isNilit && !form.operador) erros.push('Operador')
+    if (isNilit && !form.po) erros.push('Ordem de Produção (PO)')
     if (erros.length) { toast.error(`Obrigatório: ${erros.join(', ')}`); return }
 
     setLoading(true)
