@@ -5,9 +5,9 @@ import toast from 'react-hot-toast'
 import {
   getEmpresa, setEmpresa, onCiclos, setCicloManualLoteMaq,
   getLayout, setLayout,
+  getImpressoraNilit, setImpressoraNilit,
 } from '../lib/firebase'
 import { LAYOUT_DEFAULT } from '../lib/zpl'
-import { buildZPL } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
 // Sliders de fonte: converte "24,22" ↔ { h: 24, w: 22 }
@@ -43,17 +43,25 @@ function NumSlider({ label, value, min, max, onChange, unit = 'dots' }) {
 }
 
 export function ConfigPage() {
-  const [printer, setPrinter]   = useState({ vel: '3', dens: '15', offx: '0' })
-  const [ciclos,  setCiclos]    = useState([])
-  const [editando, setEditando] = useState(null)
-  const [loading, setLoading]   = useState(false)
-  const [layout, setLayoutLocal] = useState(LAYOUT_DEFAULT)
-  const [empresa, setEmpresaLocal] = useState({})
+  const [printer, setPrinter]       = useState({ vel: '3', dens: '15', offx: '-24' })
+  const [printerNilit, setPrinterNilit] = useState({ vel: '3', dens: '15', offx: '0' })
+  const [ciclos,  setCiclos]        = useState([])
+  const [editando, setEditando]     = useState(null)
+  const [loading, setLoading]       = useState(false)
+  const [layout, setLayoutLocal]    = useState(LAYOUT_DEFAULT)
+  const [empresa, setEmpresaLocal]  = useState({})
 
   useEffect(() => {
     getEmpresa().then(d => {
       setEmpresaLocal(d || {})
-      if (d?.vel) setPrinter({ vel: String(d.vel||3), dens: String(d.dens||15), offx: String(d.offx||0) })
+      if (d?.vel !== undefined) setPrinter({
+        vel:  String(d.vel  ?? 3),
+        dens: String(d.dens ?? 15),
+        offx: String(d.offx ?? -24),
+      })
+    })
+    getImpressoraNilit().then(d => {
+      setPrinterNilit({ vel: String(d.vel ?? 3), dens: String(d.dens ?? 15), offx: String(d.offx ?? 0) })
     })
     getLayout().then(setLayoutLocal)
     const unsub = onCiclos(setCiclos)
@@ -64,7 +72,16 @@ export function ConfigPage() {
     setLoading(true)
     try {
       await setEmpresa({ vel: +printer.vel, dens: +printer.dens, offx: +printer.offx })
-      toast.success('Impressora salva!')
+      toast.success('Impressora Padrão salva!')
+    } catch (e) { toast.error('Erro: ' + e.message) }
+    setLoading(false)
+  }
+
+  async function salvarImpressoraNilit() {
+    setLoading(true)
+    try {
+      await setImpressoraNilit({ vel: +printerNilit.vel, dens: +printerNilit.dens, offx: +printerNilit.offx })
+      toast.success('Impressora Nilit salva!')
     } catch (e) { toast.error('Erro: ' + e.message) }
     setLoading(false)
   }
@@ -110,9 +127,12 @@ export function ConfigPage() {
         <p className="page-subtitle">Impressora · Layout da Etiqueta · Ciclos</p>
       </div>
 
-      {/* IMPRESSORA */}
+      {/* IMPRESSORA PADRÃO */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-header"><span className="card-title">IMPRESSORA — ZEBRA ZT230</span></div>
+        <div className="card-header">
+          <span className="card-title">IMPRESSORA PADRÃO — São João / Rhodia</span>
+          <span style={{ fontSize: '.72rem', color: 'var(--muted)' }}>50×30mm · 2 colunas</span>
+        </div>
         <div className="card-body">
           <div style={{ fontSize: '.78rem', color: 'var(--muted)', marginBottom: 14 }}>
             Modelo: <span style={{ color: 'var(--green)' }}>ZT230 ZDesigner</span> · DPI: <span style={{ color: 'var(--green)' }}>200</span> · Etiqueta: <span style={{ color: 'var(--orange)' }}>50×30mm · 2 colunas</span> · Protocolo: <span style={{ color: 'var(--accent)' }}>ZPL II</span>
@@ -138,6 +158,41 @@ export function ConfigPage() {
           </div>
           <button className="btn btn-primary btn-sm" style={{ marginTop: 14 }} onClick={salvarImpressora} disabled={loading}>
             <Save size={13} /> Salvar
+          </button>
+        </div>
+      </div>
+
+      {/* IMPRESSORA NILIT */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-header">
+          <span className="card-title">IMPRESSORA NILIT</span>
+          <span style={{ fontSize: '.72rem', color: 'var(--muted)' }}>64×35mm · 1 coluna · aplicado automaticamente</span>
+        </div>
+        <div className="card-body">
+          <div style={{ fontSize: '.78rem', color: 'var(--muted)', marginBottom: 14 }}>
+            Configuração aplicada <strong style={{ color: 'var(--accent)' }}>automaticamente</strong> quando o produto selecionado for da Nilit. Offset padrão <code>0</code> (sem deslocamento).
+          </div>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Velocidade (ips)</label>
+              <select className="form-control" value={printerNilit.vel} onChange={e => setPrinterNilit(p => ({ ...p, vel: e.target.value }))}>
+                <option value="2">2 ips</option><option value="3">3 ips</option>
+                <option value="4">4 ips</option><option value="6">6 ips</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Densidade (0–30)</label>
+              <input className="form-control" type="number" min="0" max="30" value={printerNilit.dens}
+                onChange={e => setPrinterNilit(p => ({ ...p, dens: e.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Offset X (dots)</label>
+              <input className="form-control" type="number" value={printerNilit.offx}
+                onChange={e => setPrinterNilit(p => ({ ...p, offx: e.target.value }))} />
+            </div>
+          </div>
+          <button className="btn btn-primary btn-sm" style={{ marginTop: 14 }} onClick={salvarImpressoraNilit} disabled={loading}>
+            <Save size={13} /> Salvar Nilit
           </button>
         </div>
       </div>

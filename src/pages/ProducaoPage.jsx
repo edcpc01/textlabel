@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
+  getImpressoraNilit, getOrCreateOperadorCode,
 } from '../lib/firebase'
 import { LAYOUT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
 import { gerarEImprimirFormularios } from '../components/Formularios'
@@ -15,7 +16,7 @@ const EMPTY = {
   data: new Date().toISOString().split('T')[0],
   composicao: '', descricao: '', titulo: '', empresa: '', cnpj: '',
   opacidade: '',
-  po: '', operador: '', lv: 'A',
+  po: '', lv: 'A',
 }
 
 export function ProducaoPage() {
@@ -24,6 +25,8 @@ export function ProducaoPage() {
   const [maquinas, setMaquinas]         = useState([])
   const [cicloPreview, setCicloPreview] = useState(null)
   const [configImpressora, setConfigImpressora] = useState({})
+  const [configNilit, setConfigNilit]   = useState({ vel: 3, dens: 15, offx: 0 })
+  const [operadorCode, setOperadorCode] = useState('0000')
   const [loading, setLoading]           = useState(false)
   const [layout, setLayoutData]         = useState(LAYOUT_DEFAULT)
 
@@ -31,7 +34,14 @@ export function ProducaoPage() {
     const u1 = onProdutos(setProdutos)
     const u2 = onMaquinas(setMaquinas)
     getEmpresa().then(setConfigImpressora)
+    getImpressoraNilit().then(setConfigNilit)
     getLayout().then(setLayoutData)
+    const user = auth.currentUser
+    if (user) {
+      getOrCreateOperadorCode(user).then(code => {
+        setOperadorCode(String(code).padStart(4, '0'))
+      })
+    }
     return () => { u1(); u2() }
   }, [])
 
@@ -68,6 +78,12 @@ export function ProducaoPage() {
     offx: configImpressora.offx ?? -24,
   }
 
+  const zplConfigNilit = {
+    vel:  configNilit.vel  || 3,
+    dens: configNilit.dens || 15,
+    offx: configNilit.offx ?? 0,
+  }
+
   async function emitir() {
     const erros = []
     if (!form.produto)    erros.push('Produto')
@@ -88,6 +104,7 @@ export function ProducaoPage() {
 
       const { ciclo, totalFusos: nFusos, barcodes } = await emitirCiclo({
         ...form,
+        operador:     operadorCode,
         maquinaFusos: totalFusos,
         empresaNome:  form.empresa || 'EMPRESA',
         userEmail:    user?.email       || '',
@@ -97,7 +114,7 @@ export function ProducaoPage() {
 
       let zplAll
       if (isNilit) {
-        zplAll = buildZPLNilitCiclo({ ...form, ciclo, emissaoHora }, zplConfig, barcodes, nFusos)
+        zplAll = buildZPLNilitCiclo({ ...form, ciclo, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos)
       } else {
         zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
       }
@@ -222,14 +239,14 @@ export function ProducaoPage() {
                         value={form.po} onChange={e => setForm(f => ({ ...f, po: e.target.value }))} />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Operador <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>4 dígitos</span></label>
-                      <input className="form-control" type="text" placeholder="Ex: 2592" maxLength={4}
-                        value={form.operador} onChange={e => setForm(f => ({ ...f, operador: e.target.value }))} />
-                    </div>
-                    <div className="form-group">
                       <label className="form-label">Carga LV <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>letra</span></label>
                       <input className="form-control" type="text" placeholder="Ex: A" maxLength={1}
                         value={form.lv} onChange={e => setForm(f => ({ ...f, lv: e.target.value.toUpperCase() }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Operador</label>
+                      <input className="form-control" readOnly value={operadorCode}
+                        style={{ color: 'var(--muted)', cursor: 'default' }} />
                     </div>
                   </>
                 )}

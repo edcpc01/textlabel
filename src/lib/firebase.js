@@ -193,6 +193,46 @@ export async function setEmpresa(data) {
   return setDoc(doc(db, 'meta', 'empresa'), data, { merge: true })
 }
 
+// ─── CONFIG IMPRESSORA NILIT ───────────────────────────
+export async function getImpressoraNilit() {
+  const snap = await getDoc(doc(db, 'meta', 'impressora_nilit'))
+  return snap.exists()
+    ? { vel: 3, dens: 15, offx: 0, ...snap.data() }
+    : { vel: 3, dens: 15, offx: 0 }
+}
+export async function setImpressoraNilit(data) {
+  return setDoc(doc(db, 'meta', 'impressora_nilit'), data, { merge: true })
+}
+
+// ─── CÓDIGO OPERADOR POR USUÁRIO ───────────────────────
+export async function getOrCreateOperadorCode(user) {
+  if (!user?.uid) return 1000
+  const userRef = doc(db, 'usuarios', user.uid)
+  const userSnap = await getDoc(userRef)
+  if (userSnap.exists() && userSnap.data().operadorCode) {
+    return userSnap.data().operadorCode
+  }
+  const seqRef = doc(db, 'meta', 'operador_seq')
+  let code
+  await runTransaction(db, async tx => {
+    const seqSnap = await tx.get(seqRef)
+    if (!seqSnap.exists()) {
+      code = 1000
+      tx.set(seqRef, { valor: 1001 })
+    } else {
+      code = seqSnap.data().valor
+      tx.update(seqRef, { valor: code + 1 })
+    }
+    tx.set(userRef, {
+      operadorCode: code,
+      email:        user.email       || '',
+      nome:         user.displayName || '',
+      criadoEm:     serverTimestamp(),
+    }, { merge: true })
+  })
+  return code
+}
+
 // ─── LAYOUT DA ETIQUETA ────────────────────────────────
 // LAYOUT_DEFAULT está definido em src/lib/zpl.js
 import { LAYOUT_DEFAULT } from './zpl.js'
