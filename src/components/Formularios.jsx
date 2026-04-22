@@ -267,7 +267,19 @@ export function gerarEImprimirFormularios(dados) {
 </body>
 </html>`
 
-  const win = window.open('', '_blank', 'width=900,height=700')
-  win.document.write(html)
-  win.document.close()
+  // Download automático do arquivo .htm para o monitor local (.bat) processar a impressão na Corradi-Tietê
+  const timestamp = Date.now()
+  const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}.htm`
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }, 500)
 }
