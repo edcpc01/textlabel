@@ -2,7 +2,7 @@
 // Gera e imprime os 3 formulários com dados do ciclo
 
 export function gerarEImprimirFormularios(dados) {
-  const { maquina, lote, ciclo, descricao, composicao, titulo, empresa, cnpj, data, totalFusos } = dados
+  const { maquina, lote, ciclo, descricao, composicao, titulo, empresa, cnpj, data, totalFusos, impressoraRede } = dados
 
   const cicloStr  = String(ciclo).padStart(5, '0')
   const maqCiclo  = `${maquina}${cicloStr}`
@@ -269,7 +269,8 @@ export function gerarEImprimirFormularios(dados) {
 
   // Download automático do arquivo .htm para o monitor local (.bat) processar a impressão na Corradi-Tietê
   const timestamp = Date.now()
-  const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}.htm`
+  const impressoraSufixo = impressoraRede ? `__${impressoraRede.replace(/[^a-zA-Z0-9\-_]/g, '_')}` : ''
+  const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}${impressoraSufixo}.htm`
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

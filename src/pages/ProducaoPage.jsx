@@ -135,6 +135,7 @@ export function ProducaoPage() {
           cnpj:       form.cnpj,
           data:       form.data,
           totalFusos: nFusos,
+          impressoraRede: configImpressora.impressoraRede,
         })
       }
 

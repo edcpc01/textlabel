@@ -60,6 +60,7 @@ export function ConfigPage() {
         vel:  String(d.vel  ?? 3),
         dens: String(d.dens ?? 15),
         offx: String(d.offx ?? -24),
+        rede: d.impressoraRede || '',
       })
     })
     getImpressoraNilit().then(d => {
@@ -74,7 +75,7 @@ export function ConfigPage() {
   async function salvarImpressora() {
     setLoading(true)
     try {
-      await setEmpresa({ vel: +printer.vel, dens: +printer.dens, offx: +printer.offx })
+      await setEmpresa({ vel: +printer.vel, dens: +printer.dens, offx: +printer.offx, impressoraRede: printer.rede || '' })
       toast.success('Impressora Padrão salva!')
     } catch (e) { toast.error('Erro: ' + e.message) }
     setLoading(false)
@@ -181,6 +182,14 @@ export function ConfigPage() {
               <label className="form-label">Offset X (dots)</label>
               <input className="form-control" type="number" value={printer.offx}
                 onChange={e => setPrinter(p => ({ ...p, offx: e.target.value }))} />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="form-label">Impressora de Formulários (Nome/IP na Rede)</label>
+              <input className="form-control" type="text" placeholder="Ex: Corradi-Tietê ou 10.0.0.104" value={printer.rede || ''}
+                onChange={e => setPrinter(p => ({ ...p, rede: e.target.value }))} />
+              <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginTop: 4 }}>
+                O nome informado será anexado ao arquivo .htm para que o script local (.bat) saiba para qual impressora enviar.
+              </div>
             </div>
           </div>
           <button className="btn btn-primary btn-sm" style={{ marginTop: 14 }} onClick={salvarImpressora} disabled={loading}>
