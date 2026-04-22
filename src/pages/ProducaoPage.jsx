@@ -6,7 +6,7 @@ import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
 } from '../lib/firebase'
-import { LAYOUT_DEFAULT, buildZPLCiclo, printZPL } from '../lib/zpl'
+import { LAYOUT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
 import { gerarEImprimirFormularios } from '../components/Formularios'
 import { LabelPreview } from '../components/LabelPreview'
 
@@ -14,6 +14,8 @@ const EMPTY = {
   produto: '', maquina: '', lote: '',
   data: new Date().toISOString().split('T')[0],
   composicao: '', descricao: '', titulo: '', empresa: '', cnpj: '',
+  opacidade: '',
+  po: '', operador: '', lv: 'A',
 }
 
 export function ProducaoPage() {
@@ -46,13 +48,16 @@ export function ProducaoPage() {
     setForm(f => ({
       ...f,
       produto:    cod,
-      descricao:  prod?.desc    || f.descricao,
-      composicao: prod?.comp    || f.composicao,
-      titulo:     prod?.titulo  || f.titulo,
-      empresa:    prod?.empresa || f.empresa,
-      cnpj:       prod?.cnpj    || f.cnpj,
+      descricao:  prod?.desc      || f.descricao,
+      composicao: prod?.comp      || f.composicao,
+      titulo:     prod?.titulo    || f.titulo,
+      empresa:    prod?.empresa   || f.empresa,
+      cnpj:       prod?.cnpj      || f.cnpj,
+      opacidade:  prod?.opacidade || f.opacidade,
     }))
   }
+
+  const isNilit = (form.empresa || '').toLowerCase().includes('nilit')
 
   const maqObj     = maquinas.find(m => m.cod === form.maquina)
   const totalFusos = parseInt(maqObj?.fusos) || 0
@@ -72,36 +77,48 @@ export function ProducaoPage() {
     if (!form.composicao) erros.push('Composição')
     if (!form.descricao)  erros.push('Descrição')
     if (!totalFusos)      erros.push('Máquina sem Nº de Fusos cadastrado')
+    if (isNilit && !form.po)       erros.push('Ordem de Produção (PO)')
+    if (isNilit && !form.operador) erros.push('Operador')
     if (erros.length) { toast.error(`Obrigatório: ${erros.join(', ')}`); return }
 
     setLoading(true)
     try {
       const user = auth.currentUser
-      const { ciclo, totalFusos: nFusos } = await emitirCiclo({
+      const emissaoHora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+      const { ciclo, totalFusos: nFusos, barcodes } = await emitirCiclo({
         ...form,
         maquinaFusos: totalFusos,
         empresaNome:  form.empresa || 'EMPRESA',
         userEmail:    user?.email       || '',
         userName:     user?.displayName || user?.email || '',
+        emissaoHora,
       })
 
-      const zplAll  = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
+      let zplAll
+      if (isNilit) {
+        zplAll = buildZPLNilitCiclo({ ...form, ciclo, emissaoHora }, zplConfig, barcodes, nFusos)
+      } else {
+        zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
+      }
+
       const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
       await printZPL(zplAll, filename)
 
-      // Gera e imprime os 3 formulários em impressora de rede
-      gerarEImprimirFormularios({
-        maquina:    form.maquina,
-        lote:       form.lote,
-        ciclo,
-        descricao:  form.descricao,
-        composicao: form.composicao,
-        titulo:     form.titulo,
-        empresa:    form.empresa,
-        cnpj:       form.cnpj,
-        data:       form.data,
-        totalFusos: nFusos,
-      })
+      if (!isNilit) {
+        gerarEImprimirFormularios({
+          maquina:    form.maquina,
+          lote:       form.lote,
+          ciclo,
+          descricao:  form.descricao,
+          composicao: form.composicao,
+          titulo:     form.titulo,
+          empresa:    form.empresa,
+          cnpj:       form.cnpj,
+          data:       form.data,
+          totalFusos: nFusos,
+        })
+      }
 
       setCicloPreview(ciclo + 1)
       toast.success(`✓ Ciclo ${String(ciclo).padStart(3,'0')} — ${nFusos} etiquetas (${form.maquina} / ${form.lote})`)
@@ -197,6 +214,25 @@ export function ProducaoPage() {
                     ))}
                   </select>
                 </div>
+                {isNilit && (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Ordem de Produção <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>Nilit</span></label>
+                      <input className="form-control" type="text" placeholder="Ex: 620680"
+                        value={form.po} onChange={e => setForm(f => ({ ...f, po: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Operador <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>4 dígitos</span></label>
+                      <input className="form-control" type="text" placeholder="Ex: 2592" maxLength={4}
+                        value={form.operador} onChange={e => setForm(f => ({ ...f, operador: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Carga LV <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>letra</span></label>
+                      <input className="form-control" type="text" placeholder="Ex: A" maxLength={1}
+                        value={form.lv} onChange={e => setForm(f => ({ ...f, lv: e.target.value.toUpperCase() }))} />
+                    </div>
+                  </>
+                )}
                 <div className="form-group">
                   <label className="form-label">Data de Fabricação</label>
                   <input className="form-control" type="date"
@@ -249,7 +285,7 @@ export function ProducaoPage() {
               <span className="card-title">PREVIEW — FUSO 1</span>
             </div>
             <div className="card-body" style={{ padding: 0 }}>
-              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} />
+              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} isNilit={isNilit} />
             </div>
           </div>
         </div>

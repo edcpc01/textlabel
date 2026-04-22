@@ -101,7 +101,7 @@ function EditableRow({ columns, row, onSave, onDelete }) {
 // ─── PRODUTOS ─────────────────────────────────────────
 function ProdutosCard({ produtos }) {
   const [f, setF] = useState({
-    empresa: '', cnpj: '', cod: '', desc: '', comp: '', titulo: '', un: 'kg'
+    empresa: '', cnpj: '', cod: '', desc: '', comp: '', titulo: '', un: 'kg', opacidade: ''
   })
 
   useEffect(() => {
@@ -117,32 +117,35 @@ function ProdutosCard({ produtos }) {
     if (produtos.find(p => p.cod === f.cod.toUpperCase())) {
       toast.error('Código já existe.'); return
     }
-    await addProduto({ ...f, cod: f.cod.toUpperCase() })
-    setF(p => ({ ...p, cod: '', desc: '', comp: '', titulo: '', un: 'kg' }))
+    await addProduto({ ...f, cod: f.cod.toUpperCase(), opacidade: f.opacidade.toUpperCase() })
+    setF(p => ({ ...p, cod: '', desc: '', comp: '', titulo: '', un: 'kg', opacidade: '' }))
     toast.success('Produto salvo!')
   }
 
   async function editarProduto(id, draft) {
     await updateDoc(doc(db, 'produtos', id), {
-      empresa: draft.empresa || '',
-      cnpj:    draft.cnpj    || '',
-      desc:    draft.desc    || '',
-      comp:    draft.comp    || '',
-      titulo:  draft.titulo  || '',
-      un:      draft.un      || 'kg',
+      empresa:   draft.empresa   || '',
+      cnpj:      draft.cnpj      || '',
+      desc:      draft.desc      || '',
+      comp:      draft.comp      || '',
+      titulo:    draft.titulo    || '',
+      un:        draft.un        || 'kg',
+      opacidade: draft.opacidade || '',
     })
     toast.success('Produto atualizado!')
   }
 
   const columns = [
-    { key: 'empresa', label: 'Empresa' },
-    { key: 'cnpj',    label: 'CNPJ' },
-    { key: 'cod',     label: 'Código', noEdit: true,
+    { key: 'empresa',   label: 'Empresa' },
+    { key: 'cnpj',      label: 'CNPJ' },
+    { key: 'cod',       label: 'Código', noEdit: true,
       render: v => <span className="badge badge-blue">{v}</span> },
-    { key: 'desc',    label: 'Descrição' },
-    { key: 'comp',    label: 'Composição' },
-    { key: 'titulo',  label: 'Título (Dtex)' },
-    { key: 'un',      label: 'Un.', editType: 'select', options: ['kg','g','m','con'],
+    { key: 'opacidade', label: 'Opac.',
+      render: v => v ? <span className="badge badge-blue">{v}</span> : '—' },
+    { key: 'desc',      label: 'Descrição' },
+    { key: 'comp',      label: 'Composição' },
+    { key: 'titulo',    label: 'Título (Dtex)' },
+    { key: 'un',        label: 'Un.', editType: 'select', options: ['kg','g','m','con'],
       render: v => <span className="badge badge-orange">{v}</span> },
   ]
 
@@ -163,6 +166,12 @@ function ProdutosCard({ produtos }) {
             <label className="form-label">CNPJ</label>
             <input className="form-control" placeholder="00.000.000/0000-00"
               value={f.cnpj} onChange={e => setF(p => ({ ...p, cnpj: e.target.value }))} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Opacidade <span style={{ color: 'var(--muted)', fontSize: '.75em' }}>(2 letras — ex: BK)</span></label>
+            <input className="form-control" placeholder="BK" maxLength={2}
+              value={f.opacidade}
+              onChange={e => setF(p => ({ ...p, opacidade: e.target.value.toUpperCase() }))} />
           </div>
           <div className="form-group">
             <label className="form-label">Código</label>

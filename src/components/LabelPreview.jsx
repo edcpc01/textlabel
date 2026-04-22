@@ -80,7 +80,80 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
   )
 }
 
-export function LabelPreview({ record, layout = {} }) {
+function CelulaEtiquetaNilit({ record }) {
+  const {
+    opacidade = '', maquina = '', lote = '', data = '',
+    emissaoHora = '', descricao = '', composicao = '',
+    operador = '', po = '', ciclo = 1, lv = 'A', fuso = 1,
+  } = record || {}
+
+  const maqN   = String(maquina).replace(/\D/g, '').slice(-2).padStart(2, '0')
+  const lote3  = String(lote).replace(/\D/g, '').slice(0, 3).padStart(3, '0')
+  const code1  = `${String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')}${maqN}${lote3}`
+  const dateFmt = data ? data.split('-').reverse().join('/') : '—'
+  const op     = String(operador).slice(0, 4).padStart(4, '0')
+  const lvStr  = String(lv || 'A').toUpperCase()
+
+  return (
+    <div style={{
+      width: 240, height: 131,
+      background: '#fff', color: '#000',
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      overflow: 'hidden', border: '1px solid #ccc',
+      flexShrink: 0, boxSizing: 'border-box',
+      padding: '3px 5px',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* Linha 1 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
+        <div style={{ textAlign: 'right', fontSize: 7.5, fontWeight: 700, lineHeight: 1.5 }}>
+          <div>{dateFmt}</div>
+          <div>{emissaoHora || '—:—'}</div>
+        </div>
+      </div>
+      {/* Separador */}
+      <div style={{ borderTop: '1.5px solid #000', margin: '2px 0' }} />
+      {/* Linha 2 */}
+      <div style={{ fontSize: 7.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.5 }}>
+        {String(descricao || '').slice(0, 14)}&nbsp;&nbsp;{String(maquina || '').slice(0, 8)}&nbsp;&nbsp;{String(composicao || '').slice(0, 6)}&nbsp;&nbsp;6200{op}
+      </div>
+      {/* Linha 3 */}
+      <div style={{ fontSize: 7.5, fontWeight: 700, lineHeight: 1.5, whiteSpace: 'nowrap' }}>
+        PO:{po || '—'}&nbsp;&nbsp;CG:{String(ciclo)}&nbsp;&nbsp;LV:{lvStr}&nbsp;&nbsp;POS:{String(fuso)}/1
+      </div>
+      {/* Barcode simulado */}
+      <div style={{
+        flex: 1,
+        background: 'repeating-linear-gradient(90deg, #000 0px, #000 1.5px, #fff 1.5px, #fff 3.5px)',
+        margin: '3px 0 2px',
+      }} />
+      {/* Texto barcode */}
+      <div style={{ fontSize: 6.5, textAlign: 'center', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+        B — — — — — — — —
+      </div>
+    </div>
+  )
+}
+
+export function LabelPreview({ record, layout = {}, isNilit = false }) {
+  if (isNilit) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: 8, padding: 16, width: '100%', boxSizing: 'border-box',
+      }}>
+        <div style={{ boxShadow: '0 4px 20px rgba(0,0,0,.35)', border: '1px solid #888' }}>
+          <CelulaEtiquetaNilit record={record} />
+        </div>
+        <div style={{ fontSize: '.65rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.6 }}>
+          1 coluna · 64×35mm · Nilit · 200dpi
+        </div>
+      </div>
+    )
+  }
+
   const fusoBase = record?.fuso || 1
   const fusos = [0,1,2,3,4,5].map(i => fusoBase + i)
 

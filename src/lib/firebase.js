@@ -86,20 +86,49 @@ export function onCiclos(cb) {
   )
 }
 
+// ─── BARCODE NILIT — contador sequencial ───────────────
+export async function getNextBarcodeRange(count) {
+  const ref = doc(db, 'meta', 'barcode_nilit')
+  let start
+  await runTransaction(db, async tx => {
+    const snap = await tx.get(ref)
+    if (!snap.exists()) {
+      start = 112000001
+      tx.set(ref, { valor: start + count, atualizadoEm: serverTimestamp() })
+    } else {
+      start = snap.data().valor
+      tx.update(ref, { valor: start + count, atualizadoEm: serverTimestamp() })
+    }
+  })
+  return start
+}
+
 // ─── EMITIR CICLO ──────────────────────────────────────
-// Recebe userEmail e userName do usuário logado
 export async function emitirCiclo({
   lote, maquina, maquinaFusos, produto, descricao,
   composicao, titulo, data, empresa, cnpj,
   empresaNome, userEmail, userName,
+  po = '', operador = '', lv = 'A', opacidade = '', emissaoHora = '',
 }) {
   const ciclo      = await getNextCicloLoteMaq(lote, maquina)
   const totalFusos = Math.max(1, parseInt(maquinaFusos) || 1)
   const ts         = serverTimestamp()
 
+  const isNilit = (empresa || '').toLowerCase().includes('nilit')
+  let barcodeStart = null
+  if (isNilit) {
+    barcodeStart = await getNextBarcodeRange(totalFusos)
+  }
+
+  const getBarcodeForFuso = fuso => {
+    if (!isNilit || barcodeStart === null) return ''
+    return 'B' + String(barcodeStart + (fuso - 1)).padStart(9, '0')
+  }
+
   const cicloRef = await addDoc(collection(db, 'emissoes'), {
     ciclo, lote, maquina, produto, descricao, composicao,
     titulo, data, totalFusos, empresa, cnpj, empresaNome,
+    po, operador, lv, opacidade, emissaoHora,
     userEmail: userEmail || '',
     userName:  userName  || '',
     criadoEm: ts,
@@ -110,6 +139,8 @@ export async function emitirCiclo({
     batch.set(doc(collection(db, 'etiquetas')), {
       ciclo, lote, maquina, fuso, produto, descricao,
       composicao, titulo, data, empresa, cnpj, empresaNome,
+      po, operador, lv, opacidade, emissaoHora,
+      barcode: getBarcodeForFuso(fuso),
       userEmail: userEmail || '',
       userName:  userName  || '',
       emissaoId: cicloRef.id, criadoEm: ts,
@@ -117,7 +148,11 @@ export async function emitirCiclo({
   }
   await batch.commit()
 
-  return { ciclo, totalFusos, emissaoId: cicloRef.id }
+  const barcodes = isNilit
+    ? Array.from({ length: totalFusos }, (_, i) => getBarcodeForFuso(i + 1))
+    : []
+
+  return { ciclo, totalFusos, emissaoId: cicloRef.id, barcodes }
 }
 
 // ─── EMISSÕES ──────────────────────────────────────────

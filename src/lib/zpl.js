@@ -163,3 +163,77 @@ export function downloadZPL(content, filename) {
 export async function printZPL(content, filename) {
   downloadZPL(content, filename); return 'download'
 }
+
+// ─── NILIT — 64×35mm — 1 coluna — 200dpi ──────────────
+// Width: 504 dots | Height: 276 dots
+
+function maqNums2(maquinaCod) {
+  return String(maquinaCod || '').replace(/\D/g, '').slice(-2).padStart(2, '0')
+}
+
+function lote3d(loteStr) {
+  return String(loteStr || '').replace(/\D/g, '').slice(0, 3).padStart(3, '0')
+}
+
+export function buildZPLNilit(record, config = {}) {
+  const { vel = 3, dens = 15, offx = 0 } = config
+  const {
+    opacidade   = '',
+    maquina     = '',
+    lote        = '',
+    data        = '',
+    emissaoHora = '',
+    descricao   = '',
+    composicao  = '',
+    operador    = '',
+    po          = '',
+    ciclo       = 1,
+    lv          = 'A',
+    fuso        = 1,
+    barcode     = 'B000000000',
+  } = record
+
+  const opacity2  = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
+  const code1     = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
+  const dateFmt   = data ? data.split('-').reverse().join('/') : ''
+  const hora      = emissaoHora || ''
+  const desc      = String(descricao  || '').slice(0, 16)
+  const comp      = String(composicao || '').slice(0, 8)
+  const maqFull   = String(maquina    || '').slice(0, 8)
+  const op        = String(operador   || '').slice(0, 4).padStart(4, '0')
+  const cicloStr  = String(ciclo)
+  const fusoStr   = String(fuso)
+  const lvStr     = String(lv || 'A').toUpperCase().slice(0, 1)
+
+  return `^XA
+^MMT
+^PW504
+^LL276
+^LS${offx}
+^LT0
+^PR${vel},${vel}
+~SD${dens}
+^CI28
+^FO8,8^A0N,44,38^FD${code1}^FS
+^FO316,8^A0N,22,18^FD${dateFmt}^FS
+^FO340,31^A0N,22,18^FD${hora}^FS
+^FO8,55^GB488,1,2^FS
+^FO8,60^A0N,20,14^FB488,1,0,L^FD${desc}  ${maqFull}  ${comp}  6200${op}^FS
+^FO8,84^A0N,20,14^FB488,1,0,L^FDPO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1^FS
+^FO8,112^BY2,3,100^BCN,100,N,N^FD${barcode}^FS
+^FO8,216^FB488,1,0,C^A0N,20,16^FD${barcode}^FS
+^PQ1,0,1,Y
+^XZ`
+}
+
+export function buildZPLNilitCiclo(baseRecord, config, barcodes, totalFusos) {
+  const zpls = []
+  for (let fuso = totalFusos; fuso >= 1; fuso--) {
+    zpls.push(buildZPLNilit({
+      ...baseRecord,
+      fuso,
+      barcode: (barcodes && barcodes[fuso - 1]) || 'B000000000',
+    }, config))
+  }
+  return zpls.join('\n')
+}
