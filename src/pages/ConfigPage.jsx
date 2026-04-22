@@ -184,11 +184,19 @@ export function ConfigPage() {
                 onChange={e => setPrinter(p => ({ ...p, offx: e.target.value }))} />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">Impressora de Formulários (Nome/IP na Rede)</label>
-              <input className="form-control" type="text" placeholder="Ex: Corradi-Tietê ou 10.0.0.104" value={printer.rede || ''}
-                onChange={e => setPrinter(p => ({ ...p, rede: e.target.value }))} />
+              <label className="form-label">Impressora de Formulários na Rede</label>
+              <select className="form-control" value={printer.rede || ''}
+                onChange={e => setPrinter(p => ({ ...p, rede: e.target.value }))}>
+                <option value="">— Selecione uma impressora —</option>
+                <option value="Corradi-Tietê">Corradi-Tietê</option>
+                <option value="HP LaserJet 1018">HP LaserJet 1018</option>
+                <option value="Malharia-Doptex">Malharia-Doptex</option>
+                <option value="Microsoft Print to PDF">Microsoft Print to PDF</option>
+                <option value="PDFCreator">PDFCreator</option>
+                <option value="ZDesigner ZT230-200dpi ZPL">ZDesigner ZT230-200dpi ZPL</option>
+              </select>
               <div style={{ fontSize: '.72rem', color: 'var(--muted)', marginTop: 4 }}>
-                O nome informado será anexado ao arquivo .htm para que o script local (.bat) saiba para qual impressora enviar.
+                O nome selecionado será anexado ao arquivo .htm para que o script local (.bat) saiba para qual impressora enviar silenciosamente.
               </div>
             </div>
           </div>
