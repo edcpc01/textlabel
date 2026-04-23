@@ -1,9 +1,11 @@
 // src/components/Formularios.jsx
 import React from 'react'
 
-export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressoraRede) {
-  const { maqCiclo, maquina, lote, descricao } = ciclo
-  const cicloStr = maqCiclo || '000000'
+export function gerarEImprimirFormularios(dados) {
+  // Destruturação correta dos dados vindos da ProducaoPage
+  const { ciclo, maquina, lote, descricao, empresa, totalFusos, impressoraRede } = dados
+  const maqCiclo = String(ciclo || '0').padStart(3, '0')
+  const cicloStr = maqCiclo
 
   // Torção extraída da descrição
   const torcao = (() => {
@@ -12,15 +14,16 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   })()
 
   // Fusos para formulário 2 — divididos ao meio
-  const metade    = Math.ceil(totalFusos / 2)
+  const nFusos = totalFusos || 120
+  const metade = Math.ceil(nFusos / 2)
   const rowsFuso1 = Array.from({ length: metade }, (_, i) =>
     `<tr><td>${i+1}</td><td></td><td></td></tr>`
   ).join('')
-  const rowsFuso2 = Array.from({ length: totalFusos - metade }, (_, i) =>
+  const rowsFuso2 = Array.from({ length: nFusos - metade }, (_, i) =>
     `<tr><td>${metade+i+1}</td><td></td><td></td></tr>`
   ).join('')
 
-  // QR Code via API pública (sem dependência externa)
+  // QR Code via API pública
   const qrData    = encodeURIComponent(maqCiclo)
   const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`
 
@@ -61,7 +64,7 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   .fuso-tabela th { background: #eee; font-size: 7pt; }
 
   .grid-defeitos { width: 100%; table-layout: fixed; }
-  .grid-defeitos td { height: 12mm; font-size: 7pt; border: 1px solid #000; }
+  .grid-defeitos td { height: 11mm; font-size: 7pt; border: 1px solid #000; }
   .cat-header { background: #eee; font-weight: bold; text-align: center; font-size: 8pt; padding: 1mm; }
 </style>
 </head>
@@ -76,8 +79,8 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   <table>
     <tr><td colspan="2"><span class="label">Material</span><div class="valor">${empresa || 'TECELAGEM SÃO JOÃO'}</div></td></tr>
     <tr>
-      <td width="50%"><span class="label">Lote</span><div class="valor">${lote}</div></td>
-      <td width="50%"><span class="label">Descrição</span><div class="valor">${descricao}</div></td>
+      <td width="50%"><span class="label">Lote</span><div class="valor">${lote || ''}</div></td>
+      <td width="50%"><span class="label">Descrição</span><div class="valor">${descricao || ''}</div></td>
     </tr>
   </table>
   <div class="ciclo-area">
@@ -95,7 +98,7 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   </div>
   <table>
     <tr>
-      <td width="33%"><span class="label">Máquina</span><div class="valor">${maquina}</div></td>
+      <td width="33%"><span class="label">Máquina</span><div class="valor">${maquina || ''}</div></td>
       <td width="33%"><span class="label">Turno</span><div class="valor">&nbsp;</div></td>
       <td width="34%"><span class="label">Data/Hora Ciclo</span><div class="valor">&nbsp;</div></td>
     </tr>
@@ -112,14 +115,14 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   </div>
 </div>
 
-<!-- PÁGINA 2: BRANCO (Para garantir Sheet 1 = Frente única) -->
+<!-- PÁGINA 2: BRANCO -->
 <div class="pagina">
   <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#eee; font-style:italic;">
-    [Página em branco]
+    [Página em branco para separação]
   </div>
 </div>
 
-<!-- PÁGINA 3: DEFEITOS (FRENTE DA FOLHA 2) -->
+<!-- PÁGINA 3: DEFEITOS -->
 <div class="pagina">
   <div style="text-align:center; margin-bottom:5mm;">
     <h2 style="text-transform:uppercase;">Mapa de Defeitos de Escolha</h2>
@@ -132,7 +135,7 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   </table>
 </div>
 
-<!-- PÁGINA 4: CLASSIFICAÇÃO (VERSO DA FOLHA 2) -->
+<!-- PÁGINA 4: CLASSIFICAÇÃO (PAISAGEM) -->
 <div class="pagina landscape">
   <table style="border:none; margin-bottom:10mm;">
     <tr style="border:none;">
@@ -142,10 +145,10 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
   </table>
   <table>
     <tr>
-      <td><span class="label">Máquina</span><div class="valor">${maquina}</div></td>
-      <td><span class="label">Título</span><div class="valor">${descricao}</div></td>
-      <td><span class="label">Torção</span><div class="valor">${torcao}</div></td>
-      <td><span class="label">Lote</span><div class="valor">${lote}</div></td>
+      <td><span class="label">Máquina</span><div class="valor">${maquina || ''}</div></td>
+      <td><span class="label">Título</span><div class="valor">${descricao || ''}</div></td>
+      <td><span class="label">Torção</span><div class="valor">${torcao || ''}</div></td>
+      <td><span class="label">Lote</span><div class="valor">${lote || ''}</div></td>
     </tr>
   </table>
   <table class="fuso-tabela">
@@ -153,10 +156,10 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
       <th width="10%">FUSO</th><th width="20%">BARRA</th><th width="20%">TMT</th>
       <th width="10%">FUSO</th><th width="20%">BARRA</th><th width="20%">TMT</th>
     </tr>
-    ${Array.from({ length: Math.ceil(totalFusos/2) }).map((_, i) => `
+    ${Array.from({ length: Math.ceil(nFusos/2) }).map((_, i) => `
       <tr>
         <td>${i+1}</td><td></td><td></td>
-        <td>${Math.ceil(totalFusos/2)+i+1 > totalFusos ? '-' : Math.ceil(totalFusos/2)+i+1}</td><td></td><td></td>
+        <td>${Math.ceil(nFusos/2)+i+1 > nFusos ? '-' : Math.ceil(nFusos/2)+i+1}</td><td></td><td></td>
       </tr>
     `).join('')}
   </table>
@@ -169,8 +172,8 @@ export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressora
 </html>`
 
   const timestamp = Date.now()
-  const impressoraSufixo = impressoraRede ? `__${impressoraRede.replace(/[^a-zA-Z0-9\-_]/g, '_')}` : ''
-  const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}${impressoraSufixo}.htm`
+  const sfx = impressoraRede ? `__${impressoraRede.replace(/[^a-zA-Z0-9\-_]/g, '_')}` : ''
+  const filename = `F${maqCiclo}_${maquina || 'MAQ'}_${lote || 'LOTE'}_${timestamp}${sfx}.htm`
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
