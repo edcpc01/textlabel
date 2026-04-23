@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import {
   onProdutos, onMaquinas,
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
-  getImpressoraNilit, getOrCreateOperadorCode, getLayoutNilit,
+  getImpressoraNilit, getOrCreateOperadorCode, getLayoutNilit, getProximoCicloNilitLoteMaq,
 } from '../lib/firebase'
 import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
 import { gerarEImprimirFormularios } from '../components/Formularios'
@@ -24,6 +24,7 @@ export function ProducaoPage() {
   const [produtos, setProdutos]         = useState([])
   const [maquinas, setMaquinas]         = useState([])
   const [cicloPreview, setCicloPreview] = useState(null)
+  const [lvPreviewNilit, setLvPreviewNilit] = useState('A')
   const [ultimoFormulario, setUltimoFormulario] = useState(null)
   const [configImpressora, setConfigImpressora] = useState({})
   const [configNilit, setConfigNilit]   = useState({ vel: 3, dens: 15, offx: 0 })
@@ -50,11 +51,19 @@ export function ProducaoPage() {
 
   useEffect(() => {
     if (form.lote && form.maquina) {
-      getCicloAtualLoteMaq(form.lote, form.maquina).then(setCicloPreview)
+      if (isNilit) {
+        getProximoCicloNilitLoteMaq(form.lote, form.maquina).then(({ ciclo, lv }) => {
+          setCicloPreview(ciclo)
+          setLvPreviewNilit(lv)
+        })
+      } else {
+        getCicloAtualLoteMaq(form.lote, form.maquina).then(setCicloPreview)
+      }
     } else {
       setCicloPreview(null)
+      setLvPreviewNilit('A')
     }
-  }, [form.lote, form.maquina])
+  }, [form.lote, form.maquina, isNilit])
 
   function handleProdChange(cod) {
     const prod = produtos.find(p => p.cod === cod)
@@ -104,7 +113,7 @@ export function ProducaoPage() {
       const user = auth.currentUser
       const emissaoHora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-      const { ciclo, totalFusos: nFusos, barcodes } = await emitirCiclo({
+      const { ciclo, lv: lvEmitido, totalFusos: nFusos, barcodes } = await emitirCiclo({
         ...form,
         operador:     operadorCode,
         maquinaFusos: totalFusos,
@@ -116,7 +125,7 @@ export function ProducaoPage() {
 
       let zplAll
       if (isNilit) {
-        zplAll = buildZPLNilitCiclo({ ...form, ciclo, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos, layoutNilit)
+        zplAll = buildZPLNilitCiclo({ ...form, ciclo, lv: lvEmitido, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos, layoutNilit)
       } else {
         zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
       }
@@ -143,8 +152,15 @@ export function ProducaoPage() {
         toast('Se o formulário não baixar, use "Reimprimir Formulário" ou libere múltiplos downloads para este site.', { icon: 'ℹ️' })
       }
 
-      setCicloPreview(ciclo + 1)
-      toast.success(`✓ Ciclo ${String(ciclo).padStart(3,'0')} — ${nFusos} etiquetas (${form.maquina} / ${form.lote})`)
+      if (isNilit) {
+        const prox = await getProximoCicloNilitLoteMaq(form.lote, form.maquina)
+        setCicloPreview(prox.ciclo)
+        setLvPreviewNilit(prox.lv)
+      } else {
+        setCicloPreview(ciclo + 1)
+      }
+      const sufixoNilit = isNilit ? ` · LV ${lvEmitido}` : ''
+      toast.success(`✓ Ciclo ${String(ciclo).padStart(3,'0')}${sufixoNilit} — ${nFusos} etiquetas (${form.maquina} / ${form.lote})`)
     } catch (err) {
       toast.error('Erro ao emitir: ' + err.message)
     } finally {
@@ -204,7 +220,11 @@ export function ProducaoPage() {
               <span className="card-title">DADOS DO CICLO</span>
               {cicloPreview && form.maquina && form.lote && (
                 <span style={{ fontSize: '.75rem', color: 'var(--muted)' }}>
-                  Ciclo <strong style={{ color: 'var(--accent)' }}>{String(cicloPreview).padStart(3,'0')}</strong> → {totalFusos} etiquetas
+                  Ciclo <strong style={{ color: 'var(--accent)' }}>{String(cicloPreview).padStart(3,'0')}</strong>
+                  {isNilit ? (
+                    <> · LV <strong style={{ color: 'var(--accent)' }}>{lvPreviewNilit}</strong></>
+                  ) : null}
+                  {' '}→ {totalFusos} etiquetas
                 </span>
               )}
             </div>
@@ -245,9 +265,9 @@ export function ProducaoPage() {
                         value={form.po} onChange={e => setForm(f => ({ ...f, po: e.target.value }))} />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Carga LV <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>letra</span></label>
-                      <input className="form-control" type="text" placeholder="Ex: A" maxLength={1}
-                        value={form.lv} onChange={e => setForm(f => ({ ...f, lv: e.target.value.toUpperCase() }))} />
+                      <label className="form-label">Carga LV <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>automática</span></label>
+                      <input className="form-control" type="text" readOnly value={lvPreviewNilit}
+                        style={{ color: 'var(--text)', cursor: 'default' }} />
                     </div>
                     <div className="form-group">
                       <label className="form-label">Operador</label>

@@ -48,6 +48,8 @@ function cicloDocId(lote, maquina) {
   return `${safe(lote)}__${safe(maquina)}`
 }
 
+const NILIT_LV_SEQ = ['A', 'B', 'C', 'D', 'E']
+
 export async function getNextCicloLoteMaq(lote, maquina) {
   const ref = doc(db, 'ciclos', cicloDocId(lote, maquina))
   let nextCiclo
@@ -62,6 +64,64 @@ export async function getNextCicloLoteMaq(lote, maquina) {
     }
   })
   return nextCiclo
+}
+
+export async function getNextCicloNilitLoteMaq(lote, maquina) {
+  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina))
+  let cicloAtual = 1
+  let lvAtual = 'A'
+
+  await runTransaction(db, async tx => {
+    const snap = await tx.get(ref)
+
+    if (!snap.exists()) {
+      cicloAtual = 1
+      lvAtual = 'A'
+      tx.set(ref, {
+        lote,
+        maquina,
+        valor: 1,
+        lvIndex: 1, // proximo LV = B
+        atualizadoEm: serverTimestamp(),
+      })
+      return
+    }
+
+    const data = snap.data() || {}
+    const ciclo = Number(data.valor) || 1
+    const lvIndex = Number.isInteger(data.lvIndex) ? data.lvIndex : 0
+
+    cicloAtual = ciclo
+    lvAtual = NILIT_LV_SEQ[lvIndex] || 'A'
+
+    const proximoLvIndex = lvIndex + 1
+    if (proximoLvIndex >= NILIT_LV_SEQ.length) {
+      tx.update(ref, {
+        valor: ciclo + 1,
+        lvIndex: 0,
+        atualizadoEm: serverTimestamp(),
+      })
+    } else {
+      tx.update(ref, {
+        valor: ciclo,
+        lvIndex: proximoLvIndex,
+        atualizadoEm: serverTimestamp(),
+      })
+    }
+  })
+
+  return { ciclo: cicloAtual, lv: lvAtual }
+}
+
+export async function getProximoCicloNilitLoteMaq(lote, maquina) {
+  if (!lote || !maquina) return { ciclo: 1, lv: 'A' }
+  const snap = await getDoc(doc(db, 'ciclos', cicloDocId(lote, maquina)))
+  if (!snap.exists()) return { ciclo: 1, lv: 'A' }
+
+  const data = snap.data() || {}
+  const ciclo = Number(data.valor) || 1
+  const lvIndex = Number.isInteger(data.lvIndex) ? data.lvIndex : 0
+  return { ciclo, lv: NILIT_LV_SEQ[lvIndex] || 'A' }
 }
 
 export async function getCicloAtualLoteMaq(lote, maquina) {
@@ -110,11 +170,20 @@ export async function emitirCiclo({
   empresaNome, userEmail, userName,
   po = '', operador = '', lv = 'A', opacidade = '', emissaoHora = '',
 }) {
-  const ciclo      = await getNextCicloLoteMaq(lote, maquina)
+  const isNilit = (empresa || '').toLowerCase().includes('nilit')
+
+  let ciclo = 1
+  let lvFinal = String(lv || 'A').toUpperCase().slice(0, 1)
+  if (isNilit) {
+    const next = await getNextCicloNilitLoteMaq(lote, maquina)
+    ciclo = next.ciclo
+    lvFinal = next.lv
+  } else {
+    ciclo = await getNextCicloLoteMaq(lote, maquina)
+  }
+
   const totalFusos = Math.max(1, parseInt(maquinaFusos) || 1)
   const ts         = serverTimestamp()
-
-  const isNilit = (empresa || '').toLowerCase().includes('nilit')
   let barcodeStart = null
   if (isNilit) {
     barcodeStart = await getNextBarcodeRange(totalFusos)
@@ -128,7 +197,7 @@ export async function emitirCiclo({
   const cicloRef = await addDoc(collection(db, 'emissoes'), {
     ciclo, lote, maquina, produto, descricao, composicao,
     titulo, data, totalFusos, empresa, cnpj, empresaNome,
-    po, operador, lv, opacidade, emissaoHora,
+    po, operador, lv: lvFinal, opacidade, emissaoHora,
     userEmail: userEmail || '',
     userName:  userName  || '',
     criadoEm: ts,
@@ -139,7 +208,7 @@ export async function emitirCiclo({
     batch.set(doc(collection(db, 'etiquetas')), {
       ciclo, lote, maquina, fuso, produto, descricao,
       composicao, titulo, data, empresa, cnpj, empresaNome,
-      po, operador, lv, opacidade, emissaoHora,
+      po, operador, lv: lvFinal, opacidade, emissaoHora,
       barcode: getBarcodeForFuso(fuso),
       userEmail: userEmail || '',
       userName:  userName  || '',
@@ -152,7 +221,7 @@ export async function emitirCiclo({
     ? Array.from({ length: totalFusos }, (_, i) => getBarcodeForFuso(i + 1))
     : []
 
-  return { ciclo, totalFusos, emissaoId: cicloRef.id, barcodes }
+  return { ciclo, lv: lvFinal, totalFusos, emissaoId: cicloRef.id, barcodes }
 }
 
 // ─── EMISSÕES ──────────────────────────────────────────

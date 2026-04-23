@@ -244,7 +244,6 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^FO${mX},${yCode}^A0N,${fCode.h},${fCode.w}^FD${code1}^FS
 ^FO${xDate},${yCode}^A0N,${fDate.h},${fDate.w}^FD${dateFmt}^FS
 ^FO${xTime},${yCode + fDate.h + 1}^A0N,${fDate.h},${fDate.w}^FD${hora}^FS
-^FO${mX},${ySep}^GB${W},1,2^FS
 ^FO${mX},${yL2}^A0N,${fL2.h},${fL2.w}^FB${W},1,0,L^FD${desc}  ${maqFull}  ${comp}  6200${op}^FS
 ^FO${mX},${yL3}^A0N,${fL3.h},${fL3.w}^FB${W},1,0,L^FDPO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1^FS
 ^FO${mX},${yBarcode}^BY${bW},3,${bH}^BCN,${bH},N,N^FD${barcode}^FS
