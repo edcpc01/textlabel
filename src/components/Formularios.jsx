@@ -24,101 +24,87 @@ export function gerarEImprimirFormularios(dados) {
 
   // QR Code via API pública (sem dependência externa)
   const qrData    = encodeURIComponent(maqCiclo)
-  const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`
-
-  const html = `<!DOCTYPE html>
+  const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=$  const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <title>Formulários — Ciclo ${maqCiclo}</title>
 <style>
-  /* Forçar frente/verso na mesma folha */
-  @page p1front { size: A4 portrait; margin: 12mm 14mm; }
-  @page p1back  { size: A4 portrait; margin: 12mm 14mm; }
-  @page p2      { size: A4 landscape; margin: 8mm 10mm; }
+  /* Reset de Impressão Moderno */
+  @page { size: A4 portrait; margin: 0; }
+  @page landscape-page { size: A4 landscape; margin: 0; }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Arial Narrow', Arial, sans-serif; font-size:9pt; color:#000; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: 'Arial', sans-serif; font-size: 9pt; color: #000; background: #fff; }
 
-  .pagina { width:100%; min-height:100vh; page-break-after:always; display:flex; flex-direction:column; }
-  .pagina:last-child { page-break-after:auto; }
-  .landscape { page-break-before: always; }
+  .pagina { 
+    width: 210mm; 
+    height: 297mm; 
+    padding: 12mm 15mm;
+    page-break-after: always; 
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Página em Paisagem */
+  .pagina.landscape { 
+    width: 297mm; 
+    height: 210mm; 
+    padding: 10mm 12mm;
+    page-break-before: always;
+  }
 
   /* ── FORM 1 FRENTE ── */
-  .f1 { display:flex; flex-direction:column; gap:4mm; flex:1; }
+  .f1 { display:flex; flex-direction:column; gap:4mm; height: 100%; }
   .titulo { text-align:center; border-bottom:3px solid #000; padding-bottom:3mm; }
-  .titulo h1 { font-size:26pt; font-weight:900; text-transform:uppercase; letter-spacing:2px; }
-  .titulo h2 { font-size:11pt; font-weight:400; letter-spacing:3px; text-transform:uppercase; margin-top:1mm; }
+  .titulo h1 { font-size:24pt; font-weight:900; text-transform:uppercase; }
+  .titulo h2 { font-size:10pt; font-weight:400; text-transform:uppercase; margin-top:1mm; }
   .campo { border:1.5px solid #000; padding:2mm 3mm; }
-  .campo label { font-size:6.5pt; font-weight:700; text-transform:uppercase; color:#555; display:block; margin-bottom:1mm; }
-  .campo .v { font-size:12pt; font-weight:700; min-height:6mm; }
-  .campo .v.lg { font-size:15pt; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:3mm; }
-  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:3mm; }
+  .campo label { font-size:6.5pt; font-weight:700; text-transform:uppercase; color:#333; display:block; margin-bottom:1mm; }
+  .campo .v { font-size:11pt; font-weight:700; min-height:5mm; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:3mm; }
+  .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:3mm; }
   .ciclo-box { border:3px solid #000; padding:4mm 5mm; display:flex; justify-content:space-between; align-items:center; }
-  .ciclo-box .num { font-size:40pt; font-weight:900; letter-spacing:1px; line-height:1; }
-  .ciclo-box .lbl { font-size:10pt; font-weight:700; margin-bottom:2mm; }
-  .qr-area { display:flex; flex-direction:column; align-items:center; gap:1mm; }
-  .qr-area img { width:28mm; height:28mm; }
-  .qr-area span { font-size:6.5pt; color:#555; }
+  .ciclo-box .num { font-size:38pt; font-weight:900; line-height:1; }
+  .qr-area { text-align:center; }
+  .qr-area img { width:26mm; height:26mm; }
   .checklist { border:1.5px solid #000; }
-  .cl-header { background:#333; color:#fff; font-size:8pt; font-weight:700; text-transform:uppercase; padding:2mm 3mm; }
-  .cl-body { display:grid; grid-template-columns:repeat(5,1fr); }
-  .cl-item { padding:2mm 2.5mm; border-right:1px solid #000; }
+  .cl-header { background:#000; color:#fff; font-size:8pt; font-weight:700; text-transform:uppercase; padding:2mm 3mm; }
+  .cl-body { display:grid; grid-template-columns:repeat(5, 1fr); }
+  .cl-item { padding:2mm; border-right:1px solid #000; }
   .cl-item:last-child { border-right:none; }
-  .cl-item label { font-size:6.5pt; font-weight:700; display:block; margin-bottom:1.5mm; }
-  .cl-linha { border-bottom:1px solid #ccc; height:5.5mm; margin-bottom:1.5mm; }
+  .cl-item label { font-size:6pt; font-weight:700; display:block; margin-bottom:1mm; }
+  .cl-linha { border-bottom:1px solid #aaa; height:5mm; margin-bottom:1mm; }
   .cl-row2 { border-top:1px solid #000; }
-  .cl-span2 { grid-column:span 2; border-right:none; }
-  .assinaturas { display:grid; grid-template-columns:repeat(3,1fr); gap:3mm; }
+  .cl-span2 { grid-column: span 2; border-right:none; }
+  .assinaturas { display:grid; grid-template-columns: repeat(3, 1fr); gap:3mm; }
   .assin { border:1.5px solid #000; padding:2mm 3mm; }
-  .assin label { font-size:6.5pt; font-weight:700; text-transform:uppercase; display:block; margin-bottom:10mm; }
-  .assin-linha { border-top:1px solid #000; font-size:6.5pt; padding-top:1mm; color:#555; }
+  .assin-linha { border-top:1px solid #000; font-size:6pt; margin-top:8mm; padding-top:1mm; }
 
   /* ── FORM 1 VERSO ── */
-  .f1v-titulo { text-align:center; font-size:16pt; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:4mm; }
-  .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
+  .grade { border:1.5px solid #000; display:grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
   .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
   .cat:nth-child(4n) { border-right:none; }
-  .cat.ultima { border-bottom:none; }
-  .cat-titulo { font-size:7.5pt; font-weight:700; text-transform:uppercase; text-align:center; padding:1.5mm; border-bottom:1px solid #000; background:#fafafa; }
-  .celulas { display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
-  .cel { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:8mm; }
-  .cel:nth-child(4n) { border-right:none; }
-  .instrucao { display:flex; align-items:center; justify-content:center; text-align:center; font-size:8.5pt; font-weight:700; padding:3mm; line-height:1.6; background:#f5f5f5; border-right:none; }
+  .cat-titulo { font-size:7.5pt; font-weight:700; text-align:center; padding:1.5mm; border-bottom:1px solid #000; background:#f0f0f0; }
+  .celulas { display:grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
+  .cel { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:7mm; }
   .tabela-rodape { width:100%; border-collapse:collapse; margin-top:4mm; }
-  .tabela-rodape th { border:1px solid #000; padding:2mm 3mm; font-size:8pt; font-weight:700; background:#fafafa; text-align:center; }
-  .tabela-rodape td { border:1px solid #000; padding:2mm 3mm; font-size:9pt; font-weight:700; min-height:9mm; vertical-align:middle; }
-  .rodape-info { margin-top:3mm; font-size:7pt; font-style:italic; color:#666; }
+  .tabela-rodape th, .tabela-rodape td { border:1px solid #000; padding:2mm; text-align:center; }
 
   /* ── FORM 2 PAISAGEM ── */
-  .f2 { display:flex; flex-direction:column; gap:3mm; flex:1; }
-  .f2-cab { display:flex; align-items:center; border-bottom:2.5px solid #000; padding-bottom:2.5mm; }
-  .logo { font-size:14pt; font-weight:900; font-style:italic; color:#cc0000; min-width:38mm; }
-  .logo span { font-size:6.5pt; display:block; color:#666; font-style:normal; font-weight:400; }
-  .f2-titulo { font-size:15pt; font-weight:900; text-transform:uppercase; text-align:center; flex:1; }
-  .dados-linha { display:grid; gap:0; border:1px solid #000; }
-  .dl1 { grid-template-columns:1fr 2fr 1fr 1fr; }
-  .dl2 { grid-template-columns:1fr 1fr; border-top:none; margin-top:-1px; }
-  .celula { border-right:1px solid #000; padding:1.5mm 2mm; display:flex; flex-direction:column; }
-  .celula:last-child { border-right:none; }
-  .celula label { font-size:6.5pt; font-weight:700; color:#444; margin-bottom:.5mm; }
-  .celula .cv { font-size:9.5pt; font-weight:700; min-height:5.5mm; }
-  .celula .cv.lg { font-size:12pt; }
-  .tabela-fusos { display:grid; grid-template-columns:1fr 1fr; gap:4mm; flex:1; }
-  table.fusos { width:100%; border-collapse:collapse; font-size:8pt; }
-  table.fusos th { background:#222; color:#fff; padding:1.5mm 2mm; text-align:center; border:1px solid #000; font-size:7.5pt; font-weight:700; }
-  table.fusos td { border:1px solid #000; padding:.8mm 2mm; height:5mm; text-align:center; vertical-align:middle; }
-  table.fusos td:first-child { font-weight:700; background:#f5f5f5; width:14mm; }
-  .f2-rodape { display:grid; grid-template-columns:45px 50px 1fr 1fr 1fr 1fr; gap:0; border:1px solid #000; }
-  .rd-item { border-right:1px solid #000; padding:2mm 2mm; }
-  .rd-item:last-child { border-right:none; }
-  .rd-item label { font-size:6.5pt; font-weight:700; display:block; text-transform:uppercase; }
-  .rd-item .resp { font-size:7pt; min-height:8mm; }
-  .rd-item .data-l { font-size:6.5pt; color:#555; border-top:1px solid #ccc; padding-top:1mm; margin-top:1mm; }
-  .dir { border:1px solid #000; padding:2mm 3mm; }
-  .dir .dh { display:flex; gap:12mm; font-size:8pt; font-weight:700; margin-bottom:2mm; }
-  .obs-line { border-bottom:1px solid #ccc; height:5mm; }
+  .f2-cab { display:flex; align-items:center; border-bottom:2.5px solid #000; padding-bottom:2mm; }
+  .logo { font-size:14pt; font-weight:900; font-style:italic; color:#cc0000; width:40mm; }
+  .f2-titulo { font-size:14pt; font-weight:900; text-transform:uppercase; text-align:center; flex:1; }
+  .dados-linha { display:grid; border:1px solid #000; }
+  .dl1 { grid-template-columns: 1fr 2fr 1fr 1fr; }
+  .dl2 { grid-template-columns: 1fr 1fr; border-top:none; }
+  .celula { border-right:1px solid #000; padding:1.5mm 2mm; }
+  .tabela-fusos { display:grid; grid-template-columns: 1fr 1fr; gap:4mm; margin-top:2mm; }
+  table.fusos { width:100%; border-collapse:collapse; }
+  table.fusos th { background:#000; color:#fff; padding:1.5mm; border:1px solid #000; font-size:7pt; }
+  table.fusos td { border:1px solid #000; padding:1mm; text-align:center; font-size:8pt; }
+</style>
+</head>id #ccc; height:5mm; }
 </style>
 </head>
 <body>
