@@ -189,7 +189,13 @@ export function gerarEImprimirFormularios(dados) {
   </div>
 </div>
 
-<script>window.onload = () => { setTimeout(() => window.print(), 500); }</script>
+<script>
+  window.onload = function() {
+    setTimeout(function() {
+      window.print();
+    }, 1000);
+  };
+</script>
 </body>
 </html>`
 
