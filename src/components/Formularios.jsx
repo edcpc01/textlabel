@@ -6,10 +6,10 @@ export function gerarEImprimirFormularios(dados) {
 
   const valCiclo = dados.ciclo || dados.maqCiclo || 0
   const maqCiclo = String(valCiclo).padStart(3, '0')
-  const maquina = dados.maquina || 'MAQ'
-  const lote    = dados.lote || 'LOTE'
+  const maquina = dados.maquina || ''
+  const lote    = dados.lote || ''
   const desc    = dados.descricao || dados.titulo || ''
-  const emp     = dados.empresa || 'TECELAGEM SÃO JOÃO'
+  const emp     = dados.empresa || ''
   const imp     = dados.impressoraRede || ''
   const fusos   = dados.totalFusos || 120
 
@@ -18,16 +18,14 @@ export function gerarEImprimirFormularios(dados) {
     return match ? match[1].toUpperCase() : ''
   })()
 
-  // Gerador de tabela de fusos (Modelo 2)
-  const metade = Math.ceil(fusos / 2)
-  const renderFusoRow = (i) => {
-    const fusoNum = i + 1;
-    if (fusoNum > fusos) return '<tr class="inativo"><td>-</td><td></td><td></td></tr>';
-    return `<tr><td>${fusoNum}</td><td></td><td></td></tr>`;
+  // Gerador de tabela de fusos (IDÊNTICO AO MODELO 2)
+  const renderFusoRows = (start, count) => {
+    return Array.from({ length: count }, (_, i) => {
+      const fusoNum = start + i;
+      const isAtivo = fusoNum <= fusos;
+      return `<tr class="${isAtivo ? 'ativo' : 'inativo'}"><td>${fusoNum}</td><td></td><td></td></tr>`;
+    }).join('');
   };
-
-  const rowsCol1 = Array.from({ length: 48 }, (_, i) => renderFusoRow(i)).join('');
-  const rowsCol2 = Array.from({ length: 48 }, (_, i) => renderFusoRow(i + 48)).join('');
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${maqCiclo}`
 
@@ -36,139 +34,159 @@ export function gerarEImprimirFormularios(dados) {
 <head>
 <meta charset="UTF-8">
 <style>
+  /* RESET GERAL */
   @page { size: A4 portrait; margin: 0; }
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
-  body { font-family: 'Arial Narrow', Arial, sans-serif; background: #fff; color: #000; }
-  
-  .page { width: 210mm; height: 297mm; padding: 12mm 14mm; page-break-after: always; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-  
-  /* ESTILOS MODELO 1 (ETIQUETA) */
-  .titulo-f1 { text-align: center; border-bottom: 3px solid #000; padding-bottom: 4mm; margin-bottom: 5mm; }
-  .titulo-f1 h1 { font-size: 32pt; font-weight: 900; text-transform: uppercase; }
-  .campo { border: 1.5px solid #000; padding: 2.5mm 4mm; margin-bottom: 4mm; }
-  .campo label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #555; display: block; margin-bottom: 1.5mm; }
-  .campo .v { font-size: 13pt; font-weight: 700; min-height: 7mm; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
-  .ciclo-box { border: 3px solid #000; padding: 5mm 6mm; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4mm; }
-  .ciclo-box .num { font-size: 52pt; font-weight: 900; line-height: 1; }
-  .checklist { border: 1.5px solid #000; margin-bottom: 4mm; }
-  .checklist-header { background: #333; color: #fff; font-size: 8.5pt; font-weight: 700; padding: 2mm 4mm; text-transform: uppercase; }
-  .checklist-body { display: grid; grid-template-columns: repeat(5, 1fr); }
-  .check-item { padding: 2mm 3mm; border-right: 1px solid #000; border-bottom: 1px solid #000; }
-  .check-item label { font-size: 7pt; font-weight: 700; display: block; margin-bottom: 2mm; }
-  .check-linha { border-bottom: 1px solid #ccc; height: 6mm; }
-  
-  /* ESTILOS MODELO 2 (CLASSIFICAÇÃO) */
-  .cab-f2 { display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 1mm; margin-bottom: 2mm; }
-  .f2-titulo { font-size: 10pt; font-weight: 900; text-transform: uppercase; text-align: center; flex: 1; }
-  .dados-f2 { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; border: 1px solid #000; margin-bottom: 2mm; }
-  .cel-f2 { border-right: 1px solid #000; padding: 1mm 2mm; }
-  .cel-f2 label { font-size: 5.5pt; font-weight: 700; display: block; }
-  .cel-f2 .v { font-size: 8pt; font-weight: 700; }
-  .tabela-fusos { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; flex: 1; }
-  table.fusos { width: 100%; border-collapse: collapse; }
-  table.fusos th { background: #222; color: #fff; font-size: 7pt; padding: 1mm; border: 1px solid #000; }
-  table.fusos td { border: 1px solid #000; padding: 0 1.5mm; height: 4.8mm; text-align: center; font-size: 8pt; }
-  .rodape-f2 { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid #000; margin-top: 2mm; }
-  .rd-item { border-right: 1px solid #000; padding: 1mm; font-size: 6pt; }
-  
-  /* MODELO VERSO (DEFEITOS) */
-  .grade { border: 1.5px solid #000; display: grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
-  .cat { border-right: 1.5px solid #000; border-bottom: 1.5px solid #000; display: flex; flex-direction: column; }
-  .cat-tit { font-size: 8pt; font-weight: 700; text-align: center; padding: 1.5mm; background: #f9f9f9; border-bottom: 1px solid #000; }
-  .celulas { display: grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
-  .cel-def { border-right: 1px dashed #ccc; border-bottom: 1px dashed #ccc; min-height: 10mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: 'Arial Narrow', Arial, sans-serif; background: #fff; }
 
-  @media print { .page { page-break-after: always; } .no-print { display: none; } }
+  /* CONTAINER DE PÁGINA */
+  .page { width: 210mm; height: 297mm; background: #fff; page-break-after: always; position: relative; overflow: hidden; }
+
+  /* ESTILOS MODELO 1 */
+  .f1-container { padding: 12mm 14mm; display: flex; flex-direction: column; gap: 5mm; height: 100%; }
+  .f1-titulo { text-align: center; border-bottom: 3px solid #000; padding-bottom: 4mm; }
+  .f1-titulo h1 { font-size: 32pt; font-weight: 900; text-transform: uppercase; }
+  .f1-titulo h2 { font-size: 12pt; font-weight: 400; text-transform: uppercase; margin-top: 1mm; }
+  .f1-campo { border: 1.5px solid #000; padding: 2.5mm 4mm; }
+  .f1-campo label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #555; display: block; margin-bottom: 1.5mm; }
+  .f1-campo .v { font-size: 13pt; font-weight: 700; min-height: 7mm; }
+  .f1-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .f1-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
+  .f1-ciclo-box { border: 3px solid #000; padding: 5mm 6mm; display: flex; justify-content: space-between; align-items: center; }
+  .f1-ciclo-box .num { font-size: 52pt; font-weight: 900; line-height: 1; }
+  .f1-checklist { border: 1.5px solid #000; }
+  .f1-checklist-header { background: #333; color: #fff; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; padding: 2mm 4mm; }
+  .f1-checklist-body { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .f1-check-item { padding: 2mm 3mm; border-right: 1px solid #000; }
+  .f1-check-item label { font-size: 7pt; font-weight: 700; display: block; margin-bottom: 2mm; }
+  .f1-check-linha { border-bottom: 1px solid #ccc; height: 6mm; margin-bottom: 2mm; }
+  .f1-assinaturas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin-top: auto; }
+  .f1-assin-item { border: 1.5px solid #000; padding: 2.5mm 4mm; }
+  .f1-assin-item label { font-size: 7pt; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 12mm; }
+  .f1-assin-linha { border-top: 1px solid #000; font-size: 7pt; padding-top: 1mm; color: #555; }
+
+  /* ESTILOS MODELO 2 */
+  .f2-container { padding: 3mm 5mm; display: flex; flex-direction: column; gap: 1.2mm; height: 100%; }
+  .f2-cab { display: flex; align-items: center; border-bottom: 2px solid #000; padding-bottom: 1mm; gap: 3mm; }
+  .f2-titulo-form { font-size: 9pt; font-weight: 900; text-transform: uppercase; text-align: center; flex: 1; }
+  .f2-dados-box { display: grid; border: 1px solid #000; }
+  .f2-dl1 { grid-template-columns: 1fr 2fr 1fr 1fr; }
+  .f2-dl2 { grid-template-columns: 1fr 1fr; border-top: none; margin-top: -1px; }
+  .f2-cel { border-right: 1px solid #000; padding: .5mm 2mm; display: flex; flex-direction: column; }
+  .f2-cel label { font-size: 5pt; font-weight: 700; color: #444; }
+  .f2-cel .v { font-size: 7.5pt; font-weight: 700; min-height: 3.5mm; }
+  .f2-tabela-fusos { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; flex: 1; }
+  table.fusos { width: 100%; border-collapse: collapse; }
+  table.fusos th { background: #222; color: #fff; padding: .8mm 1.5mm; text-align: center; border: 1px solid #000; font-size: 7pt; }
+  table.fusos td { border: 1px solid #000; padding: 0 1.5mm; height: 4.6mm; text-align: center; font-size: 7.5pt; }
+  table.fusos tr.inativo td { color: #ccc; background: #fafafa; }
+  .f2-rodape { display: grid; grid-template-columns: 40px 44px 1fr 1fr 1fr 1fr; border: 1px solid #000; margin-top: 1mm; }
+  .f2-rd { border-right: 1px solid #000; padding: 1mm 1.5mm; }
+  .f2-rd label { font-size: 5.5pt; font-weight: 700; display: block; text-transform: uppercase; }
+  .f2-rd .resp { font-size: 6pt; min-height: 5.5mm; }
+  .f2-dir { border: 1px solid #000; padding: 1mm 2mm; margin-top: 1mm; }
+  .f2-dir .dh { display: flex; gap: 8mm; font-size: 7pt; font-weight: 700; }
+  
+  /* MODELO 2 VERSO (DEFEITOS) */
+  .f2v-titulo { text-align: center; font-size: 16pt; font-weight: 900; text-transform: uppercase; margin-bottom: 4mm; margin-top: 5mm; }
+  .f2v-grade { border: 1.5px solid #000; display: grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
+  .f2v-cat { border-right: 1.5px solid #000; border-bottom: 1.5px solid #000; display: flex; flex-direction: column; }
+  .f2v-cat-tit { font-size: 8pt; font-weight: 700; text-transform: uppercase; text-align: center; padding: 2mm; background: #fafafa; border-bottom: 1px solid #000; }
+  .f2v-celulas { display: grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
+  .f2v-cel-def { border-right: 1px dashed #ccc; border-bottom: 1px dashed #ccc; min-height: 9.5mm; }
 </style>
 </head>
 <body>
 
-<!-- PÁGINA 1: ETIQUETA OFICIAL (MODELO 1) -->
+<!-- PÁGINA 1: MODELO 1 FRENTE -->
 <div class="page">
-  <div class="titulo-f1"><h1>Texturizadora</h1><h2>Etiqueta de Ciclo de Produção</h2></div>
-  <div class="grid2">
-    <div class="campo"><label>Material</label><div class="v">${emp}</div></div>
-    <div class="campo"><label>Lote</label><div class="v">${lote}</div></div>
+  <div class="f1-container">
+    <div class="f1-titulo"><h1>Texturizadora</h1><h2>Etiqueta de Ciclo de Produção</h2></div>
+    <div class="f1-grid2">
+      <div class="f1-campo"><label>Material</label><div class="v">${emp}</div></div>
+      <div class="f1-campo"><label>Lote</label><div class="v">${lote}</div></div>
+    </div>
+    <div class="f1-campo"><label>Descrição do Material</label><div class="v" style="font-size:16pt;">${desc}</div></div>
+    <div class="f1-ciclo-box"><div class="esq"><div class="f1-campo" style="border:none;padding:0"><label>Ciclo:</label><div class="num">${maqCiclo}</div></div></div><img src="${qrUrl}" width="100"></div>
+    <div class="f1-grid3">
+      <div class="f1-campo"><label>Máquina</label><div class="v">${maquina}</div></div>
+      <div class="f1-campo"><label>Turno</label><div class="v">&nbsp;</div></div>
+      <div class="f1-campo"><label>Data / Hora Ciclo</label><div class="v">&nbsp;</div></div>
+    </div>
+    <div class="f1-grid3">
+      <div class="f1-campo"><label>Responsável</label><div class="v">&nbsp;</div></div>
+      <div class="f1-campo"><label>QTDE Bobinas</label><div class="v">&nbsp;</div></div>
+      <div class="f1-campo"><label>Peso Bruto</label><div class="v">&nbsp;</div></div>
+    </div>
+    <div class="f1-checklist">
+      <div class="f1-checklist-header">Controle de Processo</div>
+      <div class="f1-checklist-body">
+        ${['Máquina','Aspira Fio','Confec. Jersey','Batocagem','Liberação AFT','Data','Hora','Escolha','Resp.','Resp.'].map((l,i) => `
+          <div class="f1-check-item" style="${i>=5?'border-top:1px solid #000;':''}${i==4||i==9?'border-right:none;':''}${i==9?'grid-column:span 2;':''}">
+            <label>${l}</label><div class="f1-check-linha"></div><div class="f1-check-linha"></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="f1-assinaturas">
+      <div class="f1-assin-item"><label>Jersey</label><div class="f1-assin-linha">Assinatura</div></div>
+      <div class="f1-assin-item"><label>Destino</label><div class="f1-assin-linha">Assinatura</div></div>
+      <div class="f1-assin-item"><label>Liberação</label><div class="f1-assin-linha">Assinatura</div></div>
+    </div>
   </div>
-  <div class="campo"><label>Descrição do Material</label><div class="v">${desc}</div></div>
-  <div class="ciclo-box">
-    <div><div class="label">Ciclo:</div><div class="num">${maqCiclo}</div></div>
-    <img src="${qrUrl}" width="100">
+</div>
+
+<!-- PÁGINA 2: MODELO 1 VERSO (BRANCO) -->
+<div class="page"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:#eee;font-style:italic;">(verso em branco)</div></div>
+
+<!-- PÁGINA 3: MODELO 2 FRENTE -->
+<div class="page">
+  <div class="f2-container">
+    <div class="f2-cab"><div style="font-weight:900;font-size:12pt">RHODIA</div><div class="f2-titulo-form">Classificação Visual de Afinidade Tintorial</div></div>
+    <div class="f2-dados-box f2-dl1">
+      <div class="f2-cel"><label>Maquina</label><div class="v">${maquina}</div></div>
+      <div class="f2-cel"><label>Título</label><div class="v">${desc}</div></div>
+      <div class="f2-cel"><label>Torção</label><div class="v">${torcao}</div></div>
+      <div class="f2-cel" style="border:none;"><label>Lote</label><div class="v">${lote}</div></div>
+    </div>
+    <div class="f2-dados-box f2-dl2">
+      <div class="f2-cel"><label>DataHoraCiclo</label><div class="v">&nbsp;</div></div>
+      <div class="f2-cel" style="border:none;"><label>Obs.</label><div class="v">&nbsp;</div></div>
+    </div>
+    <div class="f2-tabela-fusos">
+      <table class="fusos"><thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead><tbody>${renderFusoRows(1, 48)}</tbody></table>
+      <table class="fusos"><thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead><tbody>${renderFusoRows(49, 48)}</tbody></table>
+    </div>
+    <div class="f2-rodape">
+      <div class="f2-rd"><label>Máq</label><div class="resp"></div></div>
+      <div class="f2-rd"><label>Bob</label><div class="resp"></div></div>
+      <div class="f2-rd"><label>Jersey - Resp</label><div class="resp"></div></div>
+      <div class="f2-rd"><label>Ting - Resp</label><div class="resp"></div></div>
+      <div class="f2-rd"><label>Conf - Resp</label><div class="resp"></div></div>
+      <div class="f2-rd" style="border:none;"><label>Lib - Resp</label><div class="resp"></div></div>
+    </div>
+    <div class="f2-dir"><div class="f2-dh"><span>DIRECIONAMENTO: ___________________________</span><span>LIDER: _______________</span></div></div>
   </div>
-  <div class="grid3">
-    <div class="campo"><label>Máquina</label><div class="v">${maquina}</div></div>
-    <div class="campo"><label>Turno</label><div class="v">&nbsp;</div></div>
-    <div class="campo"><label>Data / Hora Ciclo</label><div class="v">&nbsp;</div></div>
-  </div>
-  <div class="grid3">
-    <div class="campo"><label>Responsável</label><div class="v">&nbsp;</div></div>
-    <div class="campo"><label>QTDE Bobinas</label><div class="v">&nbsp;</div></div>
-    <div class="campo"><label>Peso Bruto</label><div class="v">&nbsp;</div></div>
-  </div>
-  <div class="checklist">
-    <div class="checklist-header">Controle de Processo</div>
-    <div class="checklist-body">
-      ${Array.from({length:10}).map((_, i) => `
-        <div class="check-item"><label>${['Máquina','Aspira Fio','Confec. Jersey','Batocagem','Liberação AFT','Data','Hora','Escolha','Resp.','Resp.'][i]}</label><div class="check-linha"></div></div>
+</div>
+
+<!-- PÁGINA 4: MODELO 2 VERSO -->
+<div class="page">
+  <div class="f2-container">
+    <div class="f2v-titulo">Defeitos de Escolha Visual</div>
+    <div class="f2v-grade">
+      ${['Bobinas com Pêlo','Bobinas Suja','Tubete Amassado','Sem Entrelaçamento','Defeito Enrolamento','Torção Errada','Tubete Errado','Fio Trançado','Bobinas com 01 Cabo','Bobinas sem Reserva','Bobinas com TMT','Fio Podre','Bobinas com Anel','Bobinas Batidas'].map((n,i) => `
+        <div class="f2v-cat" style="${i%4==3?'border-right:none;':''}"><div class="f2v-cat-tit">${n}</div><div class="f2v-celulas">${Array(16).fill('<div class="f2v-cel-def"></div>').join('')}</div></div>
       `).join('')}
+      <div class="f2v-cat" style="grid-column:span 2;border:none;background:#f5f5f5;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:bold;font-size:9pt;padding:4mm;">
+        MARCAR NOS CAMPOS ACIMA O NÚMERO DA BOBINA COM DEFEITO.
+      </div>
     </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:2mm;border:1.5px solid #000">
+      <tr><th style="border:1px solid #000;padding:2mm;font-size:8pt">Etapa</th><th style="border:1px solid #000;padding:2mm;font-size:8pt">Data</th><th style="border:1px solid #000;padding:2mm;font-size:8pt">Turma</th><th style="border:1px solid #000;padding:2mm;font-size:8pt">Responsável</th></tr>
+      <tr><td style="border:1px solid #000;padding:3mm;font-size:9pt">Batocagem</td><td style="border:1px solid #000"></td><td style="border:1px solid #000"></td><td style="border:1px solid #000"></td></tr>
+      <tr><td style="border:1px solid #000;padding:3mm;font-size:9pt">Escolha</td><td style="border:1px solid #000"></td><td style="border:1px solid #000"></td><td style="border:1px solid #000"></td></tr>
+    </table>
   </div>
-  <div class="grid3" style="margin-top:auto">
-    <div class="campo"><label>Jersey</label><div style="border-top:1px solid #000;margin-top:10mm;font-size:7pt">Assinatura</div></div>
-    <div class="campo"><label>Destino</label><div style="border-top:1px solid #000;margin-top:10mm;font-size:7pt">Assinatura</div></div>
-    <div class="campo"><label>Liberação</label><div style="border-top:1px solid #000;margin-top:10mm;font-size:7pt">Assinatura</div></div>
-  </div>
-</div>
-
-<!-- PÁGINA 2: VERSO EM BRANCO -->
-<div class="page" style="justify-content:center; align-items:center; color:#ccc; font-style:italic;">
-  <p>(verso em branco para separação de folhas)</p>
-</div>
-
-<!-- PÁGINA 3: CLASSIFICAÇÃO VISUAL (MODELO 2) -->
-<div class="page">
-  <div class="cab-f2">
-    <div style="font-weight:900; font-size:12pt;">RHODIA</div>
-    <div class="f2-titulo">Classificação Visual de Afinidade Tintorial</div>
-  </div>
-  <div class="dados-f2">
-    <div class="cel-f2"><label>Maquina</label><div class="v">${maquina}</div></div>
-    <div class="cel-f2"><label>Título</label><div class="v">${desc}</div></div>
-    <div class="cel-f2"><label>Torção</label><div class="v">${torcao}</div></div>
-    <div class="cel-f2" style="border:none;"><label>Lote</label><div class="v">${lote}</div></div>
-  </div>
-  <div class="tabela-fusos">
-    <table class="fusos"><thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead><tbody>${rowsCol1}</tbody></table>
-    <table class="fusos"><thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead><tbody>${rowsCol2}</tbody></table>
-  </div>
-  <div class="rodape-f2">
-    <div class="rd-item"><label>Máq. Jersey</label></div><div class="rd-item"><label>Nº Bobinas</label></div>
-    <div class="rd-item"><label>Jersey - Resp</label></div><div class="rd-item"><label>Tingimento - Resp</label></div>
-    <div class="rd-item"><label>Conferente - Resp</label></div><div class="rd-item" style="border:none;"><label>Liberação - Resp</label></div>
-  </div>
-  <div style="border:1px solid #000; border-top:none; padding:2mm; font-size:7pt; font-weight:700;">
-    DIRECIONAMENTO PARA ESCOLHA/EMBALAGEM: _________________________________________________
-  </div>
-</div>
-
-<!-- PÁGINA 4: DEFEITOS (MODELO 2 VERSO) -->
-<div class="page">
-  <div style="text-align:center; font-size:16pt; font-weight:900; margin-bottom:4mm;">DEFEITOS DE ESCOLHA VISUAL</div>
-  <div class="grade">
-    ${['Bobinas com Pêlo','Bobinas Suja','Tubete Amassado','Sem Entrelaçamento','Defeito de Enrolamento','Torção Errada','Tubete Errado','Fio Trançado','Bobinas com 01 Cabo','Bobinas sem Reserva','Bobinas com TMT','Fio Podre','Bobinas com Anel','Bobinas Batidas'].map(n => `
-      <div class="cat"><div class="cat-tit">${n}</div><div class="celulas">${Array(16).fill('<div class="cel-def"></div>').join('')}</div></div>
-    `).join('')}
-    <div class="cat" style="grid-column: span 2; background:#f5f5f5; justify-content:center; align-items:center; font-weight:bold; font-size:10pt; text-align:center; padding:5mm;">
-      MARCAR NOS CAMPOS ACIMA O NÚMERO DA BOBINA COM DEFEITO.
-    </div>
-  </div>
-  <table style="width:100%; border-collapse:collapse; margin-top:5mm;">
-    <tr><th style="border:1px solid #000; padding:2mm; font-size:8pt;">Etapa</th><th style="border:1px solid #000; padding:2mm; font-size:8pt;">Data</th><th style="border:1px solid #000; padding:2mm; font-size:8pt;">Turno</th><th style="border:1px solid #000; padding:2mm; font-size:8pt;">Responsável</th></tr>
-    <tr><td style="border:1px solid #000; padding:4mm; font-size:9pt;">Batocagem</td><td style="border:1px solid #000;"></td><td style="border:1px solid #000;"></td><td style="border:1px solid #000;"></td></tr>
-    <tr><td style="border:1px solid #000; padding:4mm; font-size:9pt;">Escolha</td><td style="border:1px solid #000;"></td><td style="border:1px solid #000;"></td><td style="border:1px solid #000;"></td></tr>
-  </table>
 </div>
 
 <script>window.onload = () => { setTimeout(() => window.print(), 500); }</script>
