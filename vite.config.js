@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      selfDestroying: true,
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       devOptions: { enabled: true },
       manifest: {
         name: 'TextLabel — Etiquetas de Produção',
@@ -54,5 +54,9 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
   resolve: { alias: { '@': '/src' } },
 })
