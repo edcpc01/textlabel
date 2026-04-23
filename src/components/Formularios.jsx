@@ -1,11 +1,9 @@
 // src/components/Formularios.jsx
-// Gera e imprime os 3 formulários com dados do ciclo
+import React from 'react'
 
-export function gerarEImprimirFormularios(dados) {
-  const { maquina, lote, ciclo, descricao, composicao, titulo, empresa, cnpj, data, totalFusos, impressoraRede } = dados
-
-  const cicloStr  = String(ciclo).padStart(5, '0')
-  const maqCiclo  = `${maquina}${cicloStr}`
+export function emitirFormularios(ciclo, empresa, totalFusos, impressoraRede) {
+  const { maqCiclo, maquina, lote, descricao } = ciclo
+  const cicloStr = maqCiclo || '000000'
 
   // Torção extraída da descrição
   const torcao = (() => {
@@ -27,235 +25,149 @@ export function gerarEImprimirFormularios(dados) {
   const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`
 
   const html = `<!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Formulários — Ciclo ${maqCiclo}</title>
 <style>
-  /* Reset de Impressão Moderno */
-  @page { size: A4 portrait; margin: 0; }
-  @page landscape-page { size: A4 landscape; margin: 0; }
-
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { font-family: 'Arial', sans-serif; font-size: 9pt; color: #000; background: #fff; }
-
+  @page { margin: 0; size: auto; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 10pt; background: #fff; color: #000; }
+  
   .pagina { 
     width: 210mm; 
     height: 297mm; 
-    padding: 12mm 15mm;
+    padding: 15mm; 
     page-break-after: always; 
-    position: relative;
     overflow: hidden;
   }
   
-  /* Página em Paisagem */
-  .pagina.landscape { 
+  .landscape { 
     width: 297mm; 
     height: 210mm; 
-    padding: 10mm 12mm;
+    padding: 10mm;
     page-break-before: always;
   }
 
-  /* ── FORM 1 FRENTE ── */
-  .f1 { display:flex; flex-direction:column; gap:4mm; height: 100%; }
-  .titulo { text-align:center; border-bottom:3px solid #000; padding-bottom:3mm; }
-  .titulo h1 { font-size:24pt; font-weight:900; text-transform:uppercase; }
-  .titulo h2 { font-size:10pt; font-weight:400; text-transform:uppercase; margin-top:1mm; }
-  .campo { border:1.5px solid #000; padding:2mm 3mm; }
-  .campo label { font-size:6.5pt; font-weight:700; text-transform:uppercase; color:#333; display:block; margin-bottom:1mm; }
-  .campo .v { font-size:11pt; font-weight:700; min-height:5mm; }
-  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:3mm; }
-  .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:3mm; }
-  .ciclo-box { border:3px solid #000; padding:4mm 5mm; display:flex; justify-content:space-between; align-items:center; }
-  .ciclo-box .num { font-size:38pt; font-weight:900; line-height:1; }
-  .qr-area { text-align:center; }
-  .qr-area img { width:26mm; height:26mm; }
-  .checklist { border:1.5px solid #000; }
-  .cl-header { background:#000; color:#fff; font-size:8pt; font-weight:700; text-transform:uppercase; padding:2mm 3mm; }
-  .cl-body { display:grid; grid-template-columns:repeat(5, 1fr); }
-  .cl-item { padding:2mm; border-right:1px solid #000; }
-  .cl-item:last-child { border-right:none; }
-  .cl-item label { font-size:6pt; font-weight:700; display:block; margin-bottom:1mm; }
-  .cl-linha { border-bottom:1px solid #aaa; height:5mm; margin-bottom:1mm; }
-  .cl-row2 { border-top:1px solid #000; }
-  .cl-span2 { grid-column: span 2; border-right:none; }
-  .assinaturas { display:grid; grid-template-columns: repeat(3, 1fr); gap:3mm; }
-  .assin { border:1.5px solid #000; padding:2mm 3mm; }
-  .assin-linha { border-top:1px solid #000; font-size:6pt; margin-top:8mm; padding-top:1mm; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+  td, th { border: 1.5px solid #000; padding: 2mm; vertical-align: top; }
+  .label { font-size: 7pt; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 1mm; }
+  .valor { font-size: 11pt; font-weight: bold; }
+  .titulo-f1 { text-align: center; border-bottom: 3px solid #000; margin-bottom: 5mm; padding-bottom: 2mm; }
+  .titulo-f1 h1 { font-size: 22pt; text-transform: uppercase; }
+  
+  .ciclo-area { border: 3px solid #000; padding: 5mm; margin-bottom: 4mm; }
+  .fuso-tabela td { font-size: 8pt; text-align: center; height: 6mm; }
+  .fuso-tabela th { background: #eee; font-size: 7pt; }
 
-  /* ── FORM 1 VERSO ── */
-  .grade { border:1.5px solid #000; display:grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
-  .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
-  .cat:nth-child(4n) { border-right:none; }
-  .cat-titulo { font-size:7.5pt; font-weight:700; text-align:center; padding:1.5mm; border-bottom:1px solid #000; background:#f0f0f0; }
-  .celulas { display:grid; grid-template-columns: repeat(4, 1fr); flex: 1; }
-  .cel { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:7mm; }
-  .tabela-rodape { width:100%; border-collapse:collapse; margin-top:4mm; }
-  .tabela-rodape th, .tabela-rodape td { border:1px solid #000; padding:2mm; text-align:center; }
-
-  /* ── FORM 2 PAISAGEM ── */
-  .f2-cab { display:flex; align-items:center; border-bottom:2.5px solid #000; padding-bottom:2mm; }
-  .logo { font-size:14pt; font-weight:900; font-style:italic; color:#cc0000; width:40mm; }
-  .f2-titulo { font-size:14pt; font-weight:900; text-transform:uppercase; text-align:center; flex:1; }
-  .dados-linha { display:grid; border:1px solid #000; }
-  .dl1 { grid-template-columns: 1fr 2fr 1fr 1fr; }
-  .dl2 { grid-template-columns: 1fr 1fr; border-top:none; }
-  .celula { border-right:1px solid #000; padding:1.5mm 2mm; }
-  .tabela-fusos { display:grid; grid-template-columns: 1fr 1fr; gap:4mm; margin-top:2mm; }
-  table.fusos { width:100%; border-collapse:collapse; }
-  table.fusos th { background:#000; color:#fff; padding:1.5mm; border:1px solid #000; font-size:7pt; }
-  table.fusos td { border:1px solid #000; padding:1mm; text-align:center; font-size:8pt; }
-</style>
-</head>id #ccc; height:5mm; }
+  .grid-defeitos { width: 100%; table-layout: fixed; }
+  .grid-defeitos td { height: 12mm; font-size: 7pt; border: 1px solid #000; }
+  .cat-header { background: #eee; font-weight: bold; text-align: center; font-size: 8pt; padding: 1mm; }
 </style>
 </head>
 <body>
 
-<!-- PÁGINA 1 — FRENTE -->
+<!-- PÁGINA 1: ETIQUETA (FRENTE) -->
 <div class="pagina">
-<div class="f1">
-  <div class="titulo">
-    <h1>Texturizadora</h1>
-    <h2>Etiqueta de Ciclo de Produção</h2>
+  <div class="titulo-f1">
+    <h1>TEXTURIZADORA</h1>
+    <p>ETIQUETA DE CICLO DE PRODUÇÃO</p>
   </div>
-  <div class="grid2">
-    <div class="campo"><label>Material</label><div class="v">${empresa || ''}</div></div>
-    <div class="campo"><label>Lote</label><div class="v">${lote}</div></div>
-  </div>
-  <div class="campo"><label>Descrição do Material</label><div class="v lg">${descricao}</div></div>
-  <div class="ciclo-box">
-    <div>
-      <div class="lbl">Ciclo:</div>
-      <div class="num">${maqCiclo}</div>
-    </div>
-    <div class="qr-area">
-      <img src="${qrUrl}" alt="QR Code ${maqCiclo}" />
-      <span>${maqCiclo}</span>
-    </div>
-  </div>
-  <div class="grid3">
-    <div class="campo"><label>Máquina</label><div class="v">${maquina}</div></div>
-    <div class="campo"><label>Turno</label><div class="v">&nbsp;</div></div>
-    <div class="campo"><label>Data / Hora Ciclo</label><div class="v">&nbsp;</div></div>
-  </div>
-  <div class="grid3">
-    <div class="campo"><label>Responsável</label><div class="v">&nbsp;</div></div>
-    <div class="campo"><label>QTDE Bobinas</label><div class="v">&nbsp;</div></div>
-    <div class="campo"><label>Peso Bruto</label><div class="v">&nbsp;</div></div>
-  </div>
-  <div class="checklist">
-    <div class="cl-header">Controle de Processo</div>
-    <div class="cl-body">
-      <div class="cl-item"><label>Máquina</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item"><label>Aspira Fio</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item"><label>Confec. Jersei</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item"><label>Batocagem</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item"><label>Liberação AFT</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item cl-row2"><label>Data</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item cl-row2"><label>Hora</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item cl-row2"><label>Escolha</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-      <div class="cl-item cl-row2 cl-span2"><label>Responsável</label><div class="cl-linha"></div><div class="cl-linha"></div><div class="cl-linha"></div></div>
-    </div>
-  </div>
-  <div class="assinaturas">
-    <div class="assin"><label>Jersey</label><div class="assin-linha">Assinatura</div></div>
-    <div class="assin"><label>Destino</label><div class="assin-linha">Assinatura</div></div>
-    <div class="assin"><label>Liberação</label><div class="assin-linha">Assinatura</div></div>
-  </div>
-</div>
-</div>
-
-<!-- PÁGINA 2 — VERSO (impressão duplex: no verso da página 1) -->
-<div class="pagina">
-<div class="f1v-titulo">Defeitos de Escolha Visual</div>
-<div class="grade">
-  ${['Bobinas com Pêlo','Bobinas Suja','Tubete Amassado','Sem Entrelaçamento',
-     'Defeito de Enrolamento','Torção Errada','Tubete Errado','Fio Trançado',
-     'Bobinas com 01 Cabo','Bobinas sem Reserva','Bobinas com TMT','Fio Podre',
-  ].map(nome => `
-  <div class="cat">
-    <div class="cat-titulo">${nome}</div>
-    <div class="celulas">${Array(16).fill('<div class="cel"></div>').join('')}</div>
-  </div>`).join('')}
-  <div class="cat ultima"><div class="cat-titulo">Bobinas com Anel</div><div class="celulas">${Array(16).fill('<div class="cel"></div>').join('')}</div></div>
-  <div class="cat ultima"><div class="cat-titulo">Bobinas Batidas</div><div class="celulas">${Array(16).fill('<div class="cel"></div>').join('')}</div></div>
-  <div class="cat ultima"><div class="cat-titulo">&nbsp;</div><div class="celulas">${Array(16).fill('<div class="cel"></div>').join('')}</div></div>
-  <div class="cat ultima instrucao">
-    <div class="instrucao">MARCAR NOS CAMPOS<br>NÚMERO DA BOBINA<br>COM DEFEITO.</div>
-  </div>
-</div>
-<table class="tabela-rodape">
-  <thead><tr><th style="width:28mm;"></th><th style="width:35mm;">Data</th><th style="width:40mm;">Turma</th><th>Responsável</th></tr></thead>
-  <tbody>
-    <tr><td>Batocagem</td><td></td><td></td><td></td></tr>
-    <tr><td>Escolha</td><td></td><td></td><td></td></tr>
-  </tbody>
-</table>
-<div class="rodape-info">Qualidade\\padronização\\tietê\\formulários\\FO 02 038- Defeitos de Escolha Visual (folha verso)</div>
-</div>
-
-<!-- PÁGINA 3 — CLASSIFICAÇÃO VISUAL (PAISAGEM) -->
-<div class="pagina landscape" style="transform-origin:top left;">
-<div class="f2">
-  <div class="f2-cab">
-    <div class="logo">Rhodia<span>Poliamida América do Sul</span></div>
-    <div class="f2-titulo">Classificação Visual de Afinidade Tintorial</div>
-  </div>
-  <div class="dados-linha dl1">
-    <div class="celula"><label>Maquina</label><div class="cv">${maquina}</div></div>
-    <div class="celula"><label>Título</label><div class="cv lg">${descricao}</div></div>
-    <div class="celula"><label>Torção</label><div class="cv">${torcao}</div></div>
-    <div class="celula"><label>Lote</label><div class="cv">${lote}</div></div>
-  </div>
-  <div class="dados-linha dl2">
-    <div class="celula"><label>DataHoraCiclo</label><div class="cv">&nbsp;</div></div>
-    <div class="celula"><label>Obs.</label><div class="cv">&nbsp;</div></div>
-  </div>
-  <div class="tabela-fusos">
-    <table class="fusos">
-      <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
-      <tbody>${rowsFuso1}</tbody>
-    </table>
-    <table class="fusos">
-      <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
-      <tbody>${rowsFuso2}</tbody>
+  <table>
+    <tr><td colspan="2"><span class="label">Material</span><div class="valor">${empresa || 'TECELAGEM SÃO JOÃO'}</div></td></tr>
+    <tr>
+      <td width="50%"><span class="label">Lote</span><div class="valor">${lote}</div></td>
+      <td width="50%"><span class="label">Descrição</span><div class="valor">${descricao}</div></td>
+    </tr>
+  </table>
+  <div class="ciclo-area">
+    <table border="0" style="border:none; margin:0;">
+      <tr style="border:none;">
+        <td style="border:none; vertical-align:middle;">
+          <span class="label">Ciclo</span>
+          <div style="font-size: 36pt; font-weight: 900;">${maqCiclo}</div>
+        </td>
+        <td style="border:none; text-align:right; vertical-align:middle;">
+          <img src="${qrUrl}" width="100">
+        </td>
+      </tr>
     </table>
   </div>
-  <div class="f2-rodape">
-    <div class="rd-item"><label>Máq. Jersey</label><div class="resp">&nbsp;</div></div>
-    <div class="rd-item"><label>Nº Bobinas</label><div class="resp">&nbsp;</div></div>
-    <div class="rd-item"><label>Jersey — Responsável</label><div class="resp">&nbsp;</div><div class="data-l">Data:</div></div>
-    <div class="rd-item"><label>Tingimento — Responsável</label><div class="resp">&nbsp;</div><div class="data-l">Data:</div></div>
-    <div class="rd-item"><label>Conferente — Responsável</label><div class="resp">&nbsp;</div><div class="data-l">Data:</div></div>
-    <div class="rd-item"><label>Liberação — Responsável</label><div class="resp">&nbsp;</div><div class="data-l">Data:</div></div>
-  </div>
-  <div class="dir">
-    <div class="dh">
-      <span>DIRECIONAMENTO PARA ESCOLHA/EMBALAGEM</span>
-      <span>LIDER RESP.: ___________________________</span>
-    </div>
-    <div class="obs-line"></div>
-    <div class="obs-line"></div>
+  <table>
+    <tr>
+      <td width="33%"><span class="label">Máquina</span><div class="valor">${maquina}</div></td>
+      <td width="33%"><span class="label">Turno</span><div class="valor">&nbsp;</div></td>
+      <td width="34%"><span class="label">Data/Hora Ciclo</span><div class="valor">&nbsp;</div></td>
+    </tr>
+  </table>
+  <div style="margin-top: 10mm; border-top: 2px solid #000; padding-top: 5mm;">
+    <p style="font-size: 8pt; font-weight: bold; margin-bottom: 5mm;">CONTROLE DE PROCESSO / ASSINATURAS</p>
+    <table height="80">
+      <tr>
+        <td width="33%"><span class="label">Máquina</span></td>
+        <td width="33%"><span class="label">Aspira Fio</span></td>
+        <td width="34%"><span class="label">Responsável</span></td>
+      </tr>
+    </table>
   </div>
 </div>
+
+<!-- PÁGINA 2: BRANCO (Para garantir Sheet 1 = Frente única) -->
+<div class="pagina">
+  <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#eee; font-style:italic;">
+    [Página em branco]
+  </div>
+</div>
+
+<!-- PÁGINA 3: DEFEITOS (FRENTE DA FOLHA 2) -->
+<div class="pagina">
+  <div style="text-align:center; margin-bottom:5mm;">
+    <h2 style="text-transform:uppercase;">Mapa de Defeitos de Escolha</h2>
+  </div>
+  <table class="grid-defeitos">
+    ${['BOBINAS COM PELO','BOBINAS SUJA','TUBETE AMASSADO','SEM ENTRELAÇAMENTO','DEFEITO ENROLAMENTO','TORÇÃO ERRADA','TUBETE ERRADO','FIO TRANÇADO','FIO PODRE','BOBINAS COM TMT'].map(cat => `
+      <tr><td class="cat-header" colspan="4">${cat}</td></tr>
+      <tr><td></td><td></td><td></td><td></td></tr>
+    `).join('')}
+  </table>
+</div>
+
+<!-- PÁGINA 4: CLASSIFICAÇÃO (VERSO DA FOLHA 2) -->
+<div class="pagina landscape">
+  <table style="border:none; margin-bottom:10mm;">
+    <tr style="border:none;">
+      <td style="border:none; font-size:18pt; font-weight:bold;">RHODIA</td>
+      <td style="border:none; text-align:center; font-size:14pt; font-weight:bold;">CLASSIFICAÇÃO VISUAL DE AFINIDADE TINTORIAL</td>
+    </tr>
+  </table>
+  <table>
+    <tr>
+      <td><span class="label">Máquina</span><div class="valor">${maquina}</div></td>
+      <td><span class="label">Título</span><div class="valor">${descricao}</div></td>
+      <td><span class="label">Torção</span><div class="valor">${torcao}</div></td>
+      <td><span class="label">Lote</span><div class="valor">${lote}</div></td>
+    </tr>
+  </table>
+  <table class="fuso-tabela">
+    <tr>
+      <th width="10%">FUSO</th><th width="20%">BARRA</th><th width="20%">TMT</th>
+      <th width="10%">FUSO</th><th width="20%">BARRA</th><th width="20%">TMT</th>
+    </tr>
+    ${Array.from({ length: Math.ceil(totalFusos/2) }).map((_, i) => `
+      <tr>
+        <td>${i+1}</td><td></td><td></td>
+        <td>${Math.ceil(totalFusos/2)+i+1 > totalFusos ? '-' : Math.ceil(totalFusos/2)+i+1}</td><td></td><td></td>
+      </tr>
+    `).join('')}
+  </table>
 </div>
 
 <script>
-  // Aguarda QR code carregar antes de imprimir
-  window.onload = () => {
-    const img = document.querySelector('img[alt^="QR"]')
-    if (img && !img.complete) {
-      img.onload = () => setTimeout(() => window.print(), 300)
-      img.onerror = () => setTimeout(() => window.print(), 300)
-    } else {
-      setTimeout(() => window.print(), 400)
-    }
-  }
+  window.onload = () => { setTimeout(() => window.print(), 500); }
 </script>
 </body>
 </html>`
 
-  // Download automático do arquivo .htm para o monitor local (.bat) processar a impressão na Corradi-Tietê
   const timestamp = Date.now()
   const impressoraSufixo = impressoraRede ? `__${impressoraRede.replace(/[^a-zA-Z0-9\-_]/g, '_')}` : ''
   const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}${impressoraSufixo}.htm`
