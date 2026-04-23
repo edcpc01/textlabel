@@ -24,7 +24,9 @@ export function gerarEImprimirFormularios(dados) {
 
   // QR Code via API pública (sem dependência externa)
   const qrData    = encodeURIComponent(maqCiclo)
-  const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=$  const html = `<!DOCTYPE html>
+  const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`
+
+  const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
