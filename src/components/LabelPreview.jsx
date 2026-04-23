@@ -18,17 +18,24 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
   // Escala: etiqueta real = 393×236 dots → preview = 185×111px (fator ~0.47)
   const SC = 0.47
   const pf = (s) => {
-    const [h] = String(s).split(',').map(Number)
-    return Math.max(6, Math.round(h * SC * 0.72)) // converte dots → px aproximado
+    const parts = String(s).split(',')
+    const h = Number(parts[0]) || 16
+    const bold = parts[2] === 'B'
+    return {
+      size: Math.max(6, Math.round(h * SC * 0.72)),
+      bold
+    }
   }
 
-  const mX      = Number(L.margemX) || 14
-  const colMaq  = Number(L.colMaq)   || 135
-  const colCiclo = Number(L.colCiclo) || 95
-  const W       = 393 - mX * 2
-  const pMaq    = colMaq   / W
-  const pCiclo  = colCiclo / W
-  const pFuso   = 1 - pMaq - pCiclo
+  const fEmp = pf(L.fontEmpresa)
+  const fCnpj = pf(L.fontCnpj)
+  const fDesc = pf(L.fontDesc)
+  const fComp = pf(L.fontComp)
+  const fLbl  = pf(L.fontLabel)
+  const fMaq  = pf(L.fontMaq)
+  const fCiclo = pf(L.fontCiclo)
+  const fFuso = pf(L.fontFuso)
+  const fLote = pf(L.fontLote)
 
   return (
     <div style={{
@@ -41,40 +48,40 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
       padding: `${Math.round(Number(L.margemTop||8)*SC*0.6)}px ${Math.round(mX*SC*0.6)}px`,
     }}>
       {/* L1 Empresa */}
-      <div style={{ textAlign: 'center', fontSize: pf(L.fontEmpresa), fontWeight: 700, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ textAlign: 'center', fontSize: fEmp.size, fontWeight: fEmp.bold ? 900 : 700, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {empresa || '— EMPRESA —'}
       </div>
       {/* L2 CNPJ */}
-      <div style={{ textAlign: 'center', fontSize: pf(L.fontCnpj), lineHeight: 1.15 }}>
+      <div style={{ textAlign: 'center', fontSize: fCnpj.size, fontWeight: fCnpj.bold ? 900 : 400, lineHeight: 1.15 }}>
         {cnpj ? `CNPJ: ${cnpj}` : '—'}
       </div>
       {/* L3 Descrição */}
-      <div style={{ textAlign: 'center', fontSize: pf(L.fontDesc), fontWeight: 700, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ textAlign: 'center', fontSize: fDesc.size, fontWeight: fDesc.bold ? 900 : 700, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {descricao || '—'}
       </div>
       {/* L4 Composição */}
-      <div style={{ textAlign: 'center', fontSize: pf(L.fontComp), lineHeight: 1.15 }}>
+      <div style={{ textAlign: 'center', fontSize: fComp.size, fontWeight: fComp.bold ? 900 : 400, lineHeight: 1.15 }}>
         {compTit}
       </div>
 
       {/* Labels Máq/Ciclo/Fuso */}
       <div style={{ display: 'flex', marginTop: 2 }}>
-        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: pf(L.fontLabel), color: '#666' }}>Maquina</div>
-        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: pf(L.fontLabel), color: '#666' }}>Ciclo</div>
-        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: pf(L.fontLabel), color: '#666' }}>Fuso</div>
+        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: fLbl.size, fontWeight: fLbl.bold ? 900 : 400, color: '#666' }}>Maquina</div>
+        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: fLbl.size, fontWeight: fLbl.bold ? 900 : 400, color: '#666' }}>Ciclo</div>
+        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: fLbl.size, fontWeight: fLbl.bold ? 900 : 400, color: '#666' }}>Fuso</div>
       </div>
 
       {/* Valores Máq/Ciclo/Fuso */}
       <div style={{ display: 'flex', flex: 1, alignItems: 'center' }}>
-        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: pf(L.fontMaq), fontWeight: 900, lineHeight: 1 }}>{maquina}</div>
-        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: pf(L.fontCiclo), fontWeight: 900, lineHeight: 1 }}>{cicloStr}</div>
-        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: pf(L.fontFuso), fontWeight: 900, lineHeight: 1 }}>{fusoNum}</div>
+        <div style={{ width: `${pMaq*100}%`, textAlign: 'center', fontSize: fMaq.size, fontWeight: fMaq.bold ? 900 : 900, lineHeight: 1 }}>{maquina}</div>
+        <div style={{ width: `${pCiclo*100}%`, textAlign: 'center', fontSize: fCiclo.size, fontWeight: fCiclo.bold ? 900 : 900, lineHeight: 1 }}>{cicloStr}</div>
+        <div style={{ width: `${pFuso*100}%`, textAlign: 'center', fontSize: fFuso.size, fontWeight: fFuso.bold ? 900 : 900, lineHeight: 1 }}>{fusoNum}</div>
       </div>
 
       {/* Lote / Data */}
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto' }}>
-        <div style={{ flex: 1, textAlign: 'center', fontSize: pf(L.fontLote), fontWeight: 700 }}>Lote {lote}</div>
-        <div style={{ flex: 1, textAlign: 'center', fontSize: pf(L.fontLote), fontWeight: 700 }}>{dataFmt}</div>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: fLote.size, fontWeight: fLote.bold ? 900 : 700 }}>Lote {lote}</div>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: fLote.size, fontWeight: fLote.bold ? 900 : 700 }}>{dataFmt}</div>
       </div>
     </div>
   )
@@ -91,7 +98,15 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   // Escala: ZPL 504×276 dots → preview 240×131px
   const SC  = 240 / 504
-  const pfH = s => { const [h] = String(s).split(',').map(Number); return Math.max(5, Math.round(h * SC)) }
+  const pfH = s => {
+    const parts = String(s).split(',')
+    const h = Number(parts[0]) || 16
+    const bold = parts[2] === 'B'
+    return {
+      size: Math.max(5, Math.round(h * SC)),
+      bold
+    }
+  }
   const pD  = d => Math.max(1, Math.round(Number(d) * SC))
 
   const maqN    = String(maquina).replace(/\D/g, '').slice(-2).padStart(2, '0')
@@ -100,6 +115,12 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
   const dateFmt = data ? data.split('-').reverse().join('/') : '—'
   const op      = String(operador).slice(0, 4).padStart(4, '0')
   const lvStr   = String(lv || 'A').toUpperCase()
+
+  const fCode = pfH(L.fontCode)
+  const fDate = pfH(L.fontDate)
+  const fL2 = pfH(L.fontL2)
+  const fL3 = pfH(L.fontL3)
+  const fBc = pfH(L.fontBarcode)
 
   return (
     <div style={{
@@ -113,8 +134,8 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
     }}>
       {/* Linha 1 — código + data/hora */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: pfH(L.fontCode), fontWeight: 900, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
-        <div style={{ textAlign: 'right', fontSize: pfH(L.fontDate), fontWeight: 700, lineHeight: 1.4 }}>
+        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 900, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
+        <div style={{ textAlign: 'right', fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.4 }}>
           <div>{dateFmt}</div>
           <div>{emissaoHora || '—:—'}</div>
         </div>
@@ -122,11 +143,11 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       {/* Separador */}
       <div style={{ borderTop: '1.5px solid #000', margin: '1px 0' }} />
       {/* Linha 2 */}
-      <div style={{ fontSize: pfH(L.fontL2), fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+      <div style={{ fontSize: fL2.size, fontWeight: fL2.bold ? 900 : 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
         {String(descricao || '').slice(0, 14)}&nbsp;&nbsp;{String(maquina || '').slice(0, 8)}&nbsp;&nbsp;{String(composicao || '').slice(0, 6)}&nbsp;&nbsp;6200{op}
       </div>
       {/* Linha 3 */}
-      <div style={{ fontSize: pfH(L.fontL3), fontWeight: 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+      <div style={{ fontSize: fL3.size, fontWeight: fL3.bold ? 900 : 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
         PO:{po || '—'}&nbsp;&nbsp;CG:{String(ciclo)}&nbsp;&nbsp;LV:{lvStr}&nbsp;&nbsp;POS:{String(fuso)}/1
       </div>
       {/* Barcode simulado */}
@@ -136,7 +157,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
         margin: '2px 0 1px', flexShrink: 0,
       }} />
       {/* Texto barcode */}
-      <div style={{ fontSize: Math.max(4, pfH(L.fontBarcode) - 2), textAlign: 'center', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+      <div style={{ fontSize: Math.max(4, fBc.size - 2), fontWeight: fBc.bold ? 900 : 400, textAlign: 'center', fontFamily: 'monospace', letterSpacing: 0.5 }}>
         B — — — — — — — —
       </div>
     </div>

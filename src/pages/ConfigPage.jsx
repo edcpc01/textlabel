@@ -1,6 +1,6 @@
 // src/pages/ConfigPage.jsx
 import { useState, useEffect } from 'react'
-import { Save, AlertTriangle, RefreshCw } from 'lucide-react'
+import { Save, AlertTriangle, RefreshCw, Bold } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   getEmpresa, setEmpresa, onCiclos, setCicloManualLoteMaq,
@@ -12,17 +12,48 @@ import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT } from '../lib/zpl'
 import { LabelPreview } from '../components/LabelPreview'
 
 function FontSlider({ label, value, onChange }) {
-  const [h, w] = value.split(',').map(Number)
+  const parts = String(value).split(',')
+  const h = Number(parts[0]) || 16
+  const w = Number(parts[1]) || 14
+  const bold = parts[2] === 'B'
+
+  const toggleBold = () => {
+    const newBold = !bold ? ',B' : ''
+    onChange(`${h},${w}${newBold}`)
+  }
+
   return (
     <div className="form-group">
-      <label className="form-label">{label}</label>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <label className="form-label" style={{ marginBottom: 0 }}>{label}</label>
+        <button
+          onClick={toggleBold}
+          style={{
+            background: bold ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+            color: bold ? '#fff' : 'var(--muted)',
+            border: 'none',
+            borderRadius: 4,
+            padding: '2px 8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: '.65rem',
+            fontWeight: 'bold',
+            transition: 'all 0.2s'
+          }}
+          title="Alternar Negrito"
+        >
+          <Bold size={11} /> NEGRITO
+        </button>
+      </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input type="range" min="8" max="48" value={h} style={{ flex: 1 }}
-          onChange={e => onChange(`${e.target.value},${w}`)} />
+        <input type="range" min="8" max="120" value={h} style={{ flex: 1 }}
+          onChange={e => onChange(`${e.target.value},${w}${bold ? ',B' : ''}`)} />
         <span style={{ fontFamily: 'monospace', minWidth: 48, fontSize: '.8rem',
           color: 'var(--accent)', textAlign: 'center' }}>{h}×{w}</span>
-        <input type="range" min="6" max="46" value={w} style={{ flex: 1 }}
-          onChange={e => onChange(`${h},${e.target.value}`)} />
+        <input type="range" min="6" max="120" value={w} style={{ flex: 1 }}
+          onChange={e => onChange(`${h},${e.target.value}${bold ? ',B' : ''}`)} />
       </div>
     </div>
   )

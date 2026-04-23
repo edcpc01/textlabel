@@ -20,8 +20,22 @@ export const LAYOUT_DEFAULT = {
 }
 
 function parseFont(s) {
-  const [h, w] = String(s).split(',').map(Number)
-  return { h: h || 16, w: w || 14 }
+  const parts = String(s).split(',')
+  const h = Number(parts[0]) || 16
+  const w = Number(parts[1]) || 14
+  const bold = parts[2] === 'B'
+  return { h, w, bold }
+}
+
+function renderField(x, y, w, f, text, center = 'C') {
+  const cmd = `^A0N,${f.h},${f.w}`
+  const fb = `^FB${w},1,0,${center}`
+  let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
+  if (f.bold) {
+    // Técnica de negrito por sobreposição (1 dot de offset)
+    res += `^FO${x + 1},${y}${fb}${cmd}^FD${text}^FS`
+  }
+  return res
 }
 
 // ox=0 → coluna esquerda | ox=393 → coluna direita
@@ -86,18 +100,18 @@ function blocoEtiqueta(record, ox, oy, L) {
   const yLote = Math.min(y, oy + H_ETQ - fLote.h - 4)
 
   return `
-^FO${xL},${y1}^FB${W},1,0,C^A0N,${fEmp.h},${fEmp.w}^FD${emp}^FS
-^FO${xL},${y2}^FB${W},1,0,C^A0N,${fCnpj.h},${fCnpj.w}^FD${cnpjStr}^FS
-^FO${xL},${y3}^FB${W},1,0,C^A0N,${fDesc.h},${fDesc.w}^FD${desc}^FS
-^FO${xL},${y4}^FB${W},1,0,C^A0N,${fComp.h},${fComp.w}^FD${comp}^FS
-^FO${xC1},${yLbl}^FB${L.colMaq},1,0,C^A0N,${fLbl.h},${fLbl.w}^FDMaquina^FS
-^FO${xC2},${yLbl}^FB${L.colCiclo},1,0,C^A0N,${fLbl.h},${fLbl.w}^FDCiclo^FS
-^FO${xC3},${yLbl}^FB${colF},1,0,C^A0N,${fLbl.h},${fLbl.w}^FDFuso^FS
-^FO${xC1},${yVal}^FB${L.colMaq},1,0,C^A0N,${fMaq.h},${fMaq.w}^FD${maq}^FS
-^FO${xC2},${yVal}^FB${L.colCiclo},1,0,C^A0N,${fMaq.h},${fMaq.w}^FD${cicloStr}^FS
-^FO${xC3},${yVal}^FB${colF},1,0,C^A0N,${fFuso.h},${fFuso.w}^FD${fusoStr}^FS
-^FO${xL},${yLote}^FB${Math.floor(W/2)},1,0,C^A0N,${fLote.h},${fLote.w}^FDLote: ${loteStr}^FS
-^FO${xL+Math.floor(W/2)},${yLote}^FB${Math.ceil(W/2)},1,0,C^A0N,${fLote.h},${fLote.w}^FD${dataFmt}^FS`
+${renderField(xL, y1, W, fEmp, emp)}
+${renderField(xL, y2, W, fCnpj, cnpjStr)}
+${renderField(xL, y3, W, fDesc, desc)}
+${renderField(xL, y4, W, fComp, comp)}
+${renderField(xC1, yLbl, L.colMaq, fLbl, 'Maquina')}
+${renderField(xC2, yLbl, L.colCiclo, fLbl, 'Ciclo')}
+${renderField(xC3, yLbl, colF, fLbl, 'Fuso')}
+${renderField(xC1, yVal, L.colMaq, fMaq, maq)}
+${renderField(xC2, yVal, L.colCiclo, fMaq, cicloStr)}
+${renderField(xC3, yVal, colF, fFuso, fusoStr)}
+${renderField(xL, yLote, Math.floor(W/2), fLote, `Lote: ${loteStr}`)}
+${renderField(xL+Math.floor(W/2), yLote, Math.ceil(W/2), fLote, dataFmt)}`
 }
 
 export function buildZPL(record, config = {}, layout = {}) {
@@ -241,13 +255,13 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-^FO${mX},${yCode}^A0N,${fCode.h},${fCode.w}^FD${code1}^FS
-^FO${xDate},${yCode}^A0N,${fDate.h},${fDate.w}^FD${dateFmt}^FS
-^FO${xTime},${yCode + fDate.h + 1}^A0N,${fDate.h},${fDate.w}^FD${hora}^FS
-^FO${mX},${yL2}^A0N,${fL2.h},${fL2.w}^FB${W},1,0,L^FD${desc}  ${maqFull}  ${comp}  6200${op}^FS
-^FO${mX},${yL3}^A0N,${fL3.h},${fL3.w}^FB${W},1,0,L^FDPO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1^FS
+${renderField(mX, yCode, W, fCode, code1, 'L')}
+${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
+${renderField(xTime, yCode + fDate.h + 1, 5 * fDate.w, fDate, hora, 'R')}
+${renderField(mX, yL2, W, fL2, `${desc}  ${maqFull}  ${comp}  6200${op}`, 'L')}
+${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ^FO${mX},${yBarcode}^BY${bW},3,${bH}^BCN,${bH},N,N^FD${barcode}^FS
-^FO${mX},${yBcText}^FB${W},1,0,C^A0N,${fBc.h},${fBc.w}^FD${barcode}^FS
+${renderField(mX, yBcText, W, fBc, barcode, 'C')}
 ^PQ1,0,1,Y
 ^XZ`
 }
