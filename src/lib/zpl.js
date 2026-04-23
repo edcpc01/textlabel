@@ -249,7 +249,6 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const fusoStr  = String(fuso)
   const lvStr    = String(lv || 'A').toUpperCase().slice(0, 1)
 
-  const bW    = Math.max(1, Number(L.barcodeModule) || 2)
   const bR    = Number(L.barcodeRatio) || 3.0
 
   return `^XA
