@@ -32,6 +32,7 @@ export function ProducaoPage() {
   const [loading, setLoading]           = useState(false)
   const [layout, setLayoutData]         = useState(LAYOUT_DEFAULT)
   const [layoutNilit, setLayoutNilit]   = useState(LAYOUT_NILIT_DEFAULT)
+  const isNilit = (form.empresa || '').toLowerCase().includes('nilit')
 
   useEffect(() => {
     const u1 = onProdutos(setProdutos)
@@ -78,8 +79,6 @@ export function ProducaoPage() {
       opacidade:  prod?.opacidade || f.opacidade,
     }))
   }
-
-  const isNilit = (form.empresa || '').toLowerCase().includes('nilit')
 
   const maqObj     = maquinas.find(m => m.cod === form.maquina)
   const totalFusos = parseInt(maqObj?.fusos) || 0
