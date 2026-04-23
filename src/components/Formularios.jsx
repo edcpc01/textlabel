@@ -2,7 +2,7 @@
 export function gerarEImprimirFormularios(dados) {
   if (!dados) return
 
-  const valCiclo = dados.ciclo || 0
+  const valCiclo = Number(dados.ciclo || 0)
   const cicloStr = String(valCiclo).padStart(3, '0')
   const maquina = dados.maquina || ''
   const lote = dados.lote || ''
@@ -21,7 +21,7 @@ export function gerarEImprimirFormularios(dados) {
     return Array.from({ length: count }, (_, i) => {
       const fusoNum = start + i
       const isAtivo = fusoNum <= fusos
-      return `<tr class="${isAtivo ? 'ativo' : 'inativo'}"><td>${fusoNum}</td><td></td><td></td></tr>`
+      return `<tr class="${isAtivo ? 'ativo' : 'inativo'}" data-fuso="${fusoNum}"><td>${fusoNum}</td><td></td><td></td></tr>`
     }).join('')
   }
 
@@ -39,48 +39,48 @@ export function gerarEImprimirFormularios(dados) {
 <meta charset="UTF-8">
 <title>Formulários — Ciclo ${maqCiclo}</title>
 <style>
-  @page { size: A4 portrait; margin: 8mm 10mm; }
+  @page { size: A4 portrait; margin: 3mm 5mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: 'Arial Narrow', Arial, sans-serif; color: #000; background: #fff; }
-  .page { width: 100%; min-height: calc(297mm - 16mm); page-break-after: always; display: flex; flex-direction: column; }
+  .page { width: 210mm; min-height: 297mm; page-break-after: always; display: flex; flex-direction: column; background: #fff; }
   .page:last-child { page-break-after: auto; }
 
-  /* Formulario 1 (modelo formulario1_ciclo.html) */
-  .f1 { display: flex; flex-direction: column; gap: 4mm; flex: 1; }
+  /* Formulario 1 — baseado em formulario1_ciclo.html */
+  .f1 { display: flex; flex-direction: column; gap: 5mm; flex: 1; padding: 12mm 14mm; }
   .titulo { text-align: center; border-bottom: 3px solid #000; padding-bottom: 3mm; }
-  .titulo h1 { font-size: 26pt; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
-  .titulo h2 { font-size: 11pt; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; margin-top: 1mm; }
+  .titulo h1 { font-size: 32pt; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
+  .titulo h2 { font-size: 12pt; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; margin-top: 1mm; }
   .campo { border: 1.5px solid #000; padding: 2mm 3mm; }
-  .campo label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; color: #555; display: block; margin-bottom: 1mm; }
-  .campo .v { font-size: 12pt; font-weight: 700; min-height: 6mm; }
-  .campo .v.lg { font-size: 15pt; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
-  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
-  .ciclo-box { border: 3px solid #000; padding: 4mm 5mm; display: flex; justify-content: space-between; align-items: center; }
-  .ciclo-box .num { font-size: 40pt; font-weight: 900; letter-spacing: 1px; line-height: 1; }
+  .campo label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #555; display: block; margin-bottom: 1.5mm; }
+  .campo .v { font-size: 13pt; font-weight: 700; min-height: 7mm; }
+  .campo .v.lg { font-size: 16pt; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
+  .ciclo-box { border: 3px solid #000; padding: 5mm 6mm; display: flex; justify-content: space-between; align-items: center; }
+  .ciclo-box .num { font-size: 52pt; font-weight: 900; letter-spacing: 1px; line-height: 1; }
   .ciclo-box .lbl { font-size: 10pt; font-weight: 700; margin-bottom: 2mm; }
   .qr-area { display: flex; flex-direction: column; align-items: center; gap: 1mm; }
-  .qr-area img { width: 28mm; height: 28mm; }
+  .qr-area img { width: 32mm; height: 32mm; }
   .qr-area span { font-size: 6.5pt; color: #555; }
   .checklist { border: 1.5px solid #000; }
-  .cl-header { background: #333; color: #fff; font-size: 8pt; font-weight: 700; text-transform: uppercase; padding: 2mm 3mm; }
+  .cl-header { background: #333; color: #fff; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; padding: 2mm 4mm; }
   .cl-body { display: grid; grid-template-columns: repeat(5,1fr); }
-  .cl-item { padding: 2mm 2.5mm; border-right: 1px solid #000; }
+  .cl-item { padding: 2mm 3mm; border-right: 1px solid #000; }
   .cl-item:last-child { border-right: none; }
-  .cl-item label { font-size: 6.5pt; font-weight: 700; display: block; margin-bottom: 1.5mm; }
-  .cl-linha { border-bottom: 1px solid #ccc; height: 5.5mm; margin-bottom: 1.5mm; }
+  .cl-item label { font-size: 7pt; font-weight: 700; display: block; margin-bottom: 2mm; }
+  .cl-linha { border-bottom: 1px solid #ccc; height: 6mm; margin-bottom: 2mm; }
   .cl-row2 { border-top: 1px solid #000; }
   .cl-span2 { grid-column: span 2; border-right: none; }
-  .assinaturas { display: grid; grid-template-columns: repeat(3,1fr); gap: 3mm; }
-  .assin { border: 1.5px solid #000; padding: 2mm 3mm; }
-  .assin label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 10mm; }
-  .assin-linha { border-top: 1px solid #000; font-size: 6.5pt; padding-top: 1mm; color: #555; }
-  .page-branca { display:flex; align-items:center; justify-content:center; color:#ccc; font-size:9pt; font-style:italic; }
+  .assinaturas { display: grid; grid-template-columns: repeat(3,1fr); gap: 4mm; margin-top: auto; }
+  .assin { border: 1.5px solid #000; padding: 2.5mm 4mm; }
+  .assin label { font-size: 7pt; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 12mm; }
+  .assin-linha { border-top: 1px solid #000; font-size: 7pt; padding-top: 1mm; color: #555; }
+  .page-branca { display:flex; align-items:center; justify-content:center; color:#ccc; font-size:9pt; font-style:italic; min-height: 297mm; }
 
-  /* Formulario 2 (modelo formulario2_classificacao.html) */
-  .f2 { display:flex; flex-direction:column; gap:1.2mm; flex:1; }
+  /* Formulario 2 — baseado em formulario2_classificacao.html */
+  .f2 { display:flex; flex-direction:column; gap:1.2mm; flex:1; padding: 3mm 5mm; }
   .f2-cab { display:flex; align-items:center; border-bottom:2px solid #000; padding-bottom:1mm; gap:3mm; }
-  .f2-logo { font-size:14pt; font-weight:900; font-style:italic; color:#000; min-width:34mm; }
+  .f2-logo { font-size:14pt; font-weight:900; font-style:italic; color:#000; min-width:38mm; }
   .f2-titulo { font-size:9pt; font-weight:900; text-transform:uppercase; text-align:center; flex:1; letter-spacing:.2px; }
   .dados-box { display:grid; gap:0; border:1px solid #000; }
   .dl1 { grid-template-columns:1fr 2fr 1fr 1fr; }
@@ -179,7 +179,7 @@ export function gerarEImprimirFormularios(dados) {
 </div>
 
 <!-- PAGINA 2: VERSO FORMULARIO 1 (EM BRANCO) -->
-<div class="page page-branca"><p>(verso — em branco)</p></div>
+<div class="page page-branca"><p>(verso em branco)</p></div>
 
 <!-- PAGINA 3: FORMULARIO 2 CLASSIFICACAO -->
 <div class="page">
