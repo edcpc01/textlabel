@@ -59,12 +59,12 @@ function FontSlider({ label, value, onChange }) {
   )
 }
 
-function NumSlider({ label, value, min, max, onChange, unit = 'dots' }) {
+function NumSlider({ label, value, min, max, onChange, unit = 'dots', step = 1 }) {
   return (
     <div className="form-group">
       <label className="form-label">{label}</label>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input type="range" min={min} max={max} value={value} style={{ flex: 1 }}
+        <input type="range" min={min} max={max} step={step} value={value} style={{ flex: 1 }}
           onChange={e => onChange(Number(e.target.value))} />
         <span style={{ fontFamily: 'monospace', minWidth: 60, fontSize: '.8rem',
           color: 'var(--accent)', textAlign: 'center' }}>{value} {unit}</span>
@@ -323,6 +323,7 @@ export function ConfigPage() {
                       </div>
                       <NumSlider label="Altura do Barcode" value={layoutNilit.barcodeHeight} min={40} max={160} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeHeight: v}))} />
                       <NumSlider label="Módulo do Barcode (largura barras)" value={layoutNilit.barcodeModule} min={1} max={4} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeModule: v}))} />
+                      <NumSlider label="Proporção de Barras (Ratio)" value={layoutNilit.barcodeRatio ?? 3.0} min={2.0} max={3.0} step={0.1} unit="" onChange={v => setLayoutNilitLocal(l => ({...l, barcodeRatio: v}))} />
                       <NumSlider label="Margem superior (topo)" value={layoutNilit.margemTop} min={0} max={30} onChange={v => setLayoutNilitLocal(l => ({...l, margemTop: v}))} />
                       <NumSlider label="Margem lateral (X)" value={layoutNilit.margemX} min={0} max={30} onChange={v => setLayoutNilitLocal(l => ({...l, margemX: v}))} />
                     </div>

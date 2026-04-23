@@ -32,10 +32,10 @@ function renderField(x, y, w, f, text, center = 'C') {
   const fb = `^FB${w},1,0,${center}`
   let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
-    // Negrito PESADO (carimba 4 vezes com micro-deslocamentos)
-    res += `^FO${x + 1},${y}${fb}${cmd}^FD${text}^FS`
-    res += `^FO${x},${y + 1}${fb}${cmd}^FD${text}^FS`
-    res += `^FO${x + 1},${y + 1}${fb}${cmd}^FD${text}^FS`
+    // Negrito EXTRA PESADO (2 dots de deslocamento para maior visibilidade)
+    res += `^FO${x + 2},${y}${fb}${cmd}^FD${text}^FS`
+    res += `^FO${x},${y + 2}${fb}${cmd}^FD${text}^FS`
+    res += `^FO${x + 2},${y + 2}${fb}${cmd}^FD${text}^FS`
   }
   return res
 }
@@ -191,6 +191,7 @@ export const LAYOUT_NILIT_DEFAULT = {
   fontBarcode:   '20,16',  // Texto abaixo do barcode
   barcodeHeight: 100,      // Altura do barcode em dots
   barcodeModule: 2,        // Largura do módulo (BY — 1 a 4 dots)
+  barcodeRatio:  3.0,      // Proporção barras largas/finas (2.0 a 3.0)
   margemTop:     8,
   margemX:       8,
 }
@@ -248,6 +249,9 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const fusoStr  = String(fuso)
   const lvStr    = String(lv || 'A').toUpperCase().slice(0, 1)
 
+  const bW    = Math.max(1, Number(L.barcodeModule) || 2)
+  const bR    = Number(L.barcodeRatio) || 3.0
+
   return `^XA
 ^MMT
 ^PW504
@@ -262,7 +266,7 @@ ${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
 ${renderField(xTime, yCode + fDate.h + 1, 5 * fDate.w, fDate, hora, 'R')}
 ${renderField(mX, yL2, W, fL2, `${desc}  ${maqFull}  ${comp}  6200${op}`, 'L')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
-^FO${mX},${yBarcode}^BY${bW},3,${bH}^BCN,${bH},N,N^FD${barcode}^FS
+^FO${mX},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
 ^PQ1,0,1,Y
 ^XZ`
