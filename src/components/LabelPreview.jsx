@@ -27,6 +27,14 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
     }
   }
 
+  const mX      = Number(L.margemX) || 14
+  const colMaq  = Number(L.colMaq)   || 135
+  const colCiclo = Number(L.colCiclo) || 95
+  const W       = 393 - mX * 2
+  const pMaq    = colMaq   / W
+  const pCiclo  = colCiclo / W
+  const pFuso   = 1 - pMaq - pCiclo
+
   const fEmp = pf(L.fontEmpresa)
   const fCnpj = pf(L.fontCnpj)
   const fDesc = pf(L.fontDesc)
