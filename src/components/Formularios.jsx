@@ -1,7 +1,7 @@
 // src/components/Formularios.jsx
 import React from 'react'
 
-export function emitirFormularios(ciclo, empresa, totalFusos, impressoraRede) {
+export function gerarEImprimirFormularios(ciclo, empresa, totalFusos, impressoraRede) {
   const { maqCiclo, maquina, lote, descricao } = ciclo
   const cicloStr = maqCiclo || '000000'
 
