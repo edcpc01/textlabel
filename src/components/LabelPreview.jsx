@@ -142,7 +142,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
     }}>
       {/* Linha 1 — código + data/hora */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 900, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
+        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
         <div style={{ textAlign: 'right', fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.4 }}>
           <div>{dateFmt}</div>
           <div>{emissaoHora || '—:—'}</div>
