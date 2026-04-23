@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Etiqueta de Ciclo — Texturizadora</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex; justify-content: center;
+    padding: 20px;
+  }
+  .page {
+    width: 210mm; min-height: 297mm;
+    background: #fff;
+    padding: 12mm 14mm;
+    box-shadow: 0 2px 12px rgba(0,0,0,.15);
+    display: flex; flex-direction: column; gap: 5mm;
+  }
+
+  /* TÍTULO */
+  .titulo {
+    text-align: center;
+    border-bottom: 3px solid #000;
+    padding-bottom: 4mm;
+  }
+  .titulo h1 { font-size: 32pt; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+  .titulo h2 { font-size: 12pt; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; margin-top: 1mm; }
+
+  /* CAMPO GENÉRICO */
+  .campo {
+    border: 1.5px solid #000;
+    padding: 2.5mm 4mm;
+  }
+  .campo label { font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #555; display: block; margin-bottom: 1.5mm; }
+  .campo .v { font-size: 13pt; font-weight: 700; min-height: 7mm; }
+
+  /* GRID 2 COLUNAS IGUAIS */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+
+  /* GRID 3 COLUNAS IGUAIS */
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
+
+  /* CICLO BOX — destaque */
+  .ciclo-box {
+    border: 3px solid #000;
+    padding: 5mm 6mm;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ciclo-box .esq .label { font-size: 10pt; font-weight: 700; margin-bottom: 2mm; }
+  .ciclo-box .esq .num  { font-size: 52pt; font-weight: 900; letter-spacing: 1px; line-height: 1; }
+  .barcode {
+    border: 1.5px dashed #999;
+    width: 50mm; height: 22mm;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7pt; color: #aaa; text-align: center;
+  }
+
+  /* TABELA MATERIAL */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: #444; color: #fff;
+    font-size: 8pt; font-weight: 700; text-transform: uppercase;
+    padding: 2.5mm 4mm; text-align: left; border: 1px solid #000;
+  }
+  td { border: 1px solid #000; padding: 2.5mm 4mm; font-size: 10pt; min-height: 8mm; }
+  td.bold { font-weight: 700; font-size: 11pt; }
+
+  /* CHECKLIST */
+  .checklist { border: 1.5px solid #000; }
+  .checklist-header {
+    background: #333; color: #fff;
+    font-size: 8.5pt; font-weight: 700; text-transform: uppercase;
+    padding: 2mm 4mm;
+  }
+  .checklist-body { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .check-item {
+    padding: 2mm 3mm;
+    border-right: 1px solid #000;
+  }
+  .check-item:last-child { border-right: none; }
+  .check-item label { font-size: 7pt; font-weight: 700; display: block; margin-bottom: 2mm; }
+  .check-linha { border-bottom: 1px solid #ccc; height: 6mm; margin-bottom: 2mm; }
+  .check-linha:last-child { margin-bottom: 0; }
+
+  /* RODAPÉ ASSINATURAS */
+  .assinaturas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin-top: auto; }
+  .assin-item { border: 1.5px solid #000; padding: 2.5mm 4mm; }
+  .assin-item label { font-size: 7pt; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 12mm; }
+  .assin-linha { border-top: 1px solid #000; font-size: 7pt; padding-top: 1mm; color: #555; }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .page { box-shadow: none; page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- TÍTULO -->
+  <div class="titulo">
+    <h1>Texturizadora</h1>
+    <h2>Etiqueta de Ciclo de Produção</h2>
+  </div>
+
+  <!-- LINHA 1: Material + Lote -->
+  <div class="grid2">
+    <div class="campo">
+      <label>Material</label>
+      <div class="v">135614</div>
+    </div>
+    <div class="campo">
+      <label>Lote</label>
+      <div class="v">3045</div>
+    </div>
+  </div>
+
+  <!-- DESCRIÇÃO -->
+  <div class="campo">
+    <label>Descrição do Material</label>
+    <div class="v" style="font-size:16pt;">PA TEXT BRANCO 78F34 X 2 RED ENT DV</div>
+  </div>
+
+  <!-- CICLO + BARCODE -->
+  <div class="ciclo-box">
+    <div class="esq">
+      <div class="label">Ciclo:</div>
+      <div class="num">TF07B00001</div>
+    </div>
+    <div class="barcode">
+      [código de barras]<br>* TF07B00001 *
+    </div>
+  </div>
+
+  <!-- LINHA 3: Máquina + Turno + Data/Hora -->
+  <div class="grid3">
+    <div class="campo">
+      <label>Máquina</label>
+      <div class="v">TF07B</div>
+    </div>
+    <div class="campo">
+      <label>Turno</label>
+      <div class="v">Virada</div>
+    </div>
+    <div class="campo">
+      <label>Data / Hora Ciclo</label>
+      <div class="v">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- LINHA 4: Responsável + QTDE Bobinas + Peso Bruto -->
+  <div class="grid3">
+    <div class="campo">
+      <label>Responsável</label>
+      <div class="v">&nbsp;</div>
+    </div>
+    <div class="campo">
+      <label>QTDE Bobinas</label>
+      <div class="v">&nbsp;</div>
+    </div>
+    <div class="campo">
+      <label>Peso Bruto</label>
+      <div class="v">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="checklist">
+    <div class="checklist-header">Controle de Processo</div>
+    <div class="checklist-body">
+      <div class="check-item">
+        <label>Máquina</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item">
+        <label>Aspira Fio</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item">
+        <label>Confec. Jersei</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item">
+        <label>Batocagem</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item">
+        <label>Liberação AFT</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <!-- Linha 2 do checklist: Data / Hora / Escolha / Responsável -->
+      <div class="check-item" style="border-top:1px solid #000">
+        <label>Data</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item" style="border-top:1px solid #000">
+        <label>Hora</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item" style="border-top:1px solid #000">
+        <label>Escolha</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+      <div class="check-item" style="border-top:1px solid #000; border-right:none; grid-column: span 2;">
+        <label>Responsável</label>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+        <div class="check-linha"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSINATURAS -->
+  <div class="assinaturas">
+    <div class="assin-item">
+      <label>Jersey</label>
+      <div class="assin-linha">Assinatura</div>
+    </div>
+    <div class="assin-item">
+      <label>Destino</label>
+      <div class="assin-linha">Assinatura</div>
+    </div>
+    <div class="assin-item">
+      <label>Liberação</label>
+      <div class="assin-linha">Assinatura</div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+  @media print {
+    body { background:none; padding:0; }
+    .page { box-shadow:none; page-break-after:always; }
+    .page-branca { page-break-after:auto; }
+  }
+  .page-branca {
+    width:210mm; min-height:297mm;
+    background:#fff;
+    box-shadow:0 2px 12px rgba(0,0,0,.15);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .page-branca p {
+    color:#ccc; font-size:9pt; font-style:italic;
+  }
+</style>
+
+<!-- PÁGINA EM BRANCO — verso do formulário 1 para impressão frente/verso -->
+<div class="page-branca">
+  <p>(verso — em branco)</p>
+</div>
+
+</body>
+</html>
