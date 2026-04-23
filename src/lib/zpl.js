@@ -32,8 +32,10 @@ function renderField(x, y, w, f, text, center = 'C') {
   const fb = `^FB${w},1,0,${center}`
   let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
-    // Técnica de negrito por sobreposição (1 dot de offset)
+    // Negrito PESADO (carimba 4 vezes com micro-deslocamentos)
     res += `^FO${x + 1},${y}${fb}${cmd}^FD${text}^FS`
+    res += `^FO${x},${y + 1}${fb}${cmd}^FD${text}^FS`
+    res += `^FO${x + 1},${y + 1}${fb}${cmd}^FD${text}^FS`
   }
   return res
 }
