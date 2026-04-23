@@ -39,10 +39,10 @@ export function gerarEImprimirFormularios(dados) {
 <meta charset="UTF-8">
 <title>Formulários — Ciclo ${maqCiclo}</title>
 <style>
-  @page { size: A4 portrait; margin: 3mm 5mm; }
+  @page { size: A4 portrait; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: 'Arial Narrow', Arial, sans-serif; color: #000; background: #fff; }
-  .page { width: 210mm; min-height: 297mm; page-break-after: always; display: flex; flex-direction: column; background: #fff; }
+  .page { width: 210mm; height: 297mm; page-break-after: always; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
   .page:last-child { page-break-after: auto; }
 
   /* Formulario 1 — baseado em formulario1_ciclo.html */
@@ -75,12 +75,13 @@ export function gerarEImprimirFormularios(dados) {
   .assin { border: 1.5px solid #000; padding: 2.5mm 4mm; }
   .assin label { font-size: 7pt; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 12mm; }
   .assin-linha { border-top: 1px solid #000; font-size: 7pt; padding-top: 1mm; color: #555; }
-  .page-branca { display:flex; align-items:center; justify-content:center; color:#ccc; font-size:9pt; font-style:italic; min-height: 297mm; }
+  .page-branca { display:flex; align-items:center; justify-content:center; color:#ccc; font-size:9pt; font-style:italic; }
 
   /* Formulario 2 — baseado em formulario2_classificacao.html */
   .f2 { display:flex; flex-direction:column; gap:1.2mm; flex:1; padding: 3mm 5mm; }
   .f2-cab { display:flex; align-items:center; border-bottom:2px solid #000; padding-bottom:1mm; gap:3mm; }
-  .f2-logo { font-size:14pt; font-weight:900; font-style:italic; color:#000; min-width:38mm; }
+  .f2-logo { font-size:14pt; font-weight:900; font-style:italic; color:#cc0000; min-width:38mm; }
+  .f2-logo span { font-size:6.5pt; display:block; color:#666; font-style:normal; font-weight:400; }
   .f2-titulo { font-size:9pt; font-weight:900; text-transform:uppercase; text-align:center; flex:1; letter-spacing:.2px; }
   .dados-box { display:grid; gap:0; border:1px solid #000; }
   .dl1 { grid-template-columns:1fr 2fr 1fr 1fr; }
@@ -185,7 +186,7 @@ export function gerarEImprimirFormularios(dados) {
 <div class="page">
   <div class="f2">
     <div class="f2-cab">
-      <div class="f2-logo">RHODIA</div>
+      <div class="f2-logo">Doptex<span>Poliamida América do Sul</span></div>
       <div class="f2-titulo">Classificação Visual de Afinidade Tintorial</div>
     </div>
     <div class="dados-box dl1">
