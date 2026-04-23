@@ -24,6 +24,7 @@ export function ProducaoPage() {
   const [produtos, setProdutos]         = useState([])
   const [maquinas, setMaquinas]         = useState([])
   const [cicloPreview, setCicloPreview] = useState(null)
+  const [ultimoFormulario, setUltimoFormulario] = useState(null)
   const [configImpressora, setConfigImpressora] = useState({})
   const [configNilit, setConfigNilit]   = useState({ vel: 3, dens: 15, offx: 0 })
   const [operadorCode, setOperadorCode] = useState('0000')
@@ -124,7 +125,7 @@ export function ProducaoPage() {
       await printZPL(zplAll, filename)
 
       if (!isNilit) {
-        gerarEImprimirFormularios({
+        const dadosFormulario = {
           maquina:    form.maquina,
           lote:       form.lote,
           ciclo,
@@ -136,7 +137,10 @@ export function ProducaoPage() {
           data:       form.data,
           totalFusos: nFusos,
           impressoraRede: configImpressora.impressoraRede,
-        })
+        }
+        setUltimoFormulario(dadosFormulario)
+        gerarEImprimirFormularios(dadosFormulario)
+        toast('Se o formulário não baixar, use "Reimprimir Formulário" ou libere múltiplos downloads para este site.', { icon: 'ℹ️' })
       }
 
       setCicloPreview(ciclo + 1)
@@ -291,6 +295,17 @@ export function ProducaoPage() {
                   <Printer size={15} />
                   {loading ? 'Emitindo...' : `Emitir Ciclo${totalFusos ? ` (${totalFusos} etiquetas)` : ''}`}
                 </button>
+                {!isNilit && !!ultimoFormulario && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      gerarEImprimirFormularios(ultimoFormulario)
+                      toast.success('Formulário reenviado para download.')
+                    }}
+                  >
+                    Reimprimir Formulário
+                  </button>
+                )}
                 <button className="btn btn-ghost btn-sm" onClick={() => setForm(EMPTY)}>Limpar</button>
               </div>
             </div>
