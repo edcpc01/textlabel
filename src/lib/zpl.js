@@ -36,9 +36,9 @@ function renderField(x, y, w, f, text, center = 'C') {
   
   res += `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
-    // SUPER NEGRITO 9X (Matriz 3x3 de 1 dot)
-    for (let dx = 0; dx <= 2; dx++) {
-      for (let dy = 0; dy <= 2; dy++) {
+    // SUPER NEGRITO 9X (Matriz 3x3 com salto de 2 dots para máxima espessura)
+    for (let dx = 0; dx <= 4; dx += 2) {
+      for (let dy = 0; dy <= 4; dy += 2) {
         if (dx === 0 && dy === 0) continue
         res += `^FO${x + dx},${y + dy}${fb}${cmd}^FD${text}^FS`
       }
@@ -213,7 +213,7 @@ function lote3d(loteStr) {
 
 export function buildZPLNilit(record, config = {}, layout = {}) {
   const L   = { ...LAYOUT_NILIT_DEFAULT, ...layout }
-  const { vel = 3, dens = 15, offx = 0 } = config
+  const { vel = 2, dens = 30, offx = 0 } = config
   const {
     opacidade = '', maquina = '', lote = '', data = '',
     emissaoHora = '', descricao = '', composicao = '',

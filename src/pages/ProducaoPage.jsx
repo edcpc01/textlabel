@@ -27,7 +27,7 @@ export function ProducaoPage() {
   const [lvPreviewNilit, setLvPreviewNilit] = useState('A')
   const [ultimoFormulario, setUltimoFormulario] = useState(null)
   const [configImpressora, setConfigImpressora] = useState({})
-  const [configNilit, setConfigNilit]   = useState({ vel: 3, dens: 15, offx: 0 })
+  const [configNilit, setConfigNilit]   = useState({ vel: 2, dens: 30, offx: 0 })
   const [operadorCode, setOperadorCode] = useState('0000')
   const [loading, setLoading]           = useState(false)
   const [layout, setLayoutData]         = useState(LAYOUT_DEFAULT)
