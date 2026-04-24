@@ -98,10 +98,6 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
 function CelulaEtiquetaNilit({ record, layout = {} }) {
   const L = { ...LAYOUT_NILIT_DEFAULT, ...layout }
 
-  const {
-    opacidade = '', maquina = '', lote = '', data = '',
-  } = record || {}
-
   // Escala: ZPL 504×276 dots → preview 240×131px
   const SC  = 240 / 504
   const pfH = s => {
@@ -109,97 +105,84 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
     const h = Number(parts[0]) || 16
     const bold = parts[2] === 'B'
     const size = Math.round(h * SC)
-    return {
-      size: isNaN(size) ? 8 : Math.max(5, size),
-      bold
-    }
+    return { size: isNaN(size) ? 8 : Math.max(5, size), bold }
   }
   const pD  = d => {
     const val = Math.round(Number(d || 0) * SC)
     return isNaN(val) ? 1 : Math.max(1, val)
   }
 
-  const maqN    = String(maquina).replace(/\D/g, '').slice(-2).padStart(2, '0')
-  const lote3   = String(lote).replace(/\D/g, '').slice(0, 3).padStart(3, '0')
-  const code1   = `${String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')}${maqN}${lote3}`
-  const dataFmt = data ? data.split('-').reverse().join('/') : '—'
-  const op      = String(record?.operador || record?.op || '0001').slice(0, 4).padStart(4, '0')
-  const lvStr   = String(record?.lv || 'A').toUpperCase()
-  const ciclo   = record?.ciclo || 1
-  const fuso    = record?.fuso || 1
+  // Variáveis de Dados
+  const opacidade = String(record?.opacidade || '').toUpperCase().slice(0, 2).padEnd(2, ' ')
+  const maqN      = String(record?.maquina || '').replace(/\D/g, '').slice(-2).padStart(2, '0')
+  const lote3     = String(record?.lote || '').replace(/\D/g, '').slice(0, 3).padStart(3, '0')
+  const code1     = `${opacidade}${maqN}${lote3}`
+  const dataFmt   = record?.data ? record.data.split('-').reverse().join('/') : '—/—/—'
+  const hora      = record?.emissaoHora || '—:—'
+  const desc      = String(record?.descricao || '').slice(0, 16)
+  const comp      = String(record?.composicao || '').slice(0, 8)
+  const maqFull   = String(record?.maquina || '').slice(0, 8)
+  const op        = String(record?.operador || record?.op || '0001').slice(0, 4).padStart(4, '0')
+  const po        = record?.po || '—'
+  const ciclo     = record?.ciclo || 1
+  const fuso      = record?.fuso || 1
+  const lvStr     = String(record?.lv || 'A').toUpperCase()
 
+  // Fontes
   const fCode = pfH(L.fontCode)
   const fDate = pfH(L.fontDate)
-  const fL2 = pfH(L.fontL2)
-  const fL3 = pfH(L.fontL3)
-  const fBc = pfH(L.fontBarcode)
-
-  const desc = String(record?.descricao || '').slice(0, 16)
-  const comp = String(record?.composicao || '').slice(0, 8)
-  const maqFull = String(record?.maquina || '').slice(0, 8)
-  const po = record?.po || '—'
+  const fL2   = pfH(L.fontL2)
+  const fL3   = pfH(L.fontL3)
+  const fBc   = pfH(L.fontBarcode)
 
   return (
     <div className="label-preview-cell" style={{
-      width: 240, height: 131,
-      background: '#fff', color: '#000',
-      fontFamily: 'Arial, Helvetica, sans-serif',
-      overflow: 'hidden', border: '1px solid #ccc',
+      width: 240, height: 131, background: '#fff', color: '#000',
+      fontFamily: 'Arial, Helvetica, sans-serif', overflow: 'hidden', border: '1px solid #ccc',
       flexShrink: 0, boxSizing: 'border-box',
       padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,
       display: 'flex', flexDirection: 'column', gap: 1,
     }}>
+      {/* Linha 1: Código (L) e Data/Hora (R) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px', paddingRight: '10px' }}>
         <div style={{ 
-          fontSize: fCode.size, 
-          fontWeight: fCode.bold ? 900 : 700, 
+          fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, 
           textShadow: fCode.bold ? '1px 1px 0px black' : 'none',
-          lineHeight: 1,
-          flex: 1,
-          overflow: 'hidden',
-          whiteSpace: 'nowrap'
+          lineHeight: 1, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap'
         }}>
           {code1}
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1 }}>{dataFmt}</div>
-          <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.2, paddingRight: '15%' }}>{emissaoHora || '—:—'}</div>
+          <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.2, paddingRight: '15%' }}>{hora}</div>
         </div>
       </div>
 
       {/* Linha 2: Desc+Comp (L) e Maq+6200 (R) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '2px', gap: '8px', paddingRight: '10px' }}>
         <div style={{ 
-          fontSize: fL2.size, 
-          fontWeight: fL2.bold ? 900 : 700, 
-          whiteSpace: 'nowrap', 
-          overflow: 'hidden', 
-          textOverflow: 'ellipsis', 
-          lineHeight: 1.1,
-          flex: 1 
+          fontSize: fL2.size, fontWeight: fL2.bold ? 900 : 700, 
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1, flex: 1 
         }}>
           {desc} {comp}
         </div>
-        <div style={{ 
-          fontSize: fL2.size, 
-          fontWeight: fL2.bold ? 900 : 700, 
-          lineHeight: 1.1,
-          flexShrink: 0,
-          textAlign: 'right'
-        }}>
+        <div style={{ fontSize: fL2.size, fontWeight: fL2.bold ? 900 : 700, lineHeight: 1.1, flexShrink: 0, textAlign: 'right' }}>
           {maqFull} 6200{op}
         </div>
       </div>
+
       {/* Linha 3 */}
       <div style={{ fontSize: fL3.size, fontWeight: fL3.bold ? 900 : 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
-        PO:{po || '—'}&nbsp;&nbsp;CG:{String(ciclo)}&nbsp;&nbsp;LV:{lvStr}&nbsp;&nbsp;POS:{String(fuso)}/1
+        PO:{po}&nbsp;&nbsp;CG:{String(ciclo)}&nbsp;&nbsp;LV:{lvStr}&nbsp;&nbsp;POS:{String(fuso)}/1
       </div>
+
       {/* Barcode simulado */}
       <div style={{
         height: pD(L.barcodeHeight || 60),
         background: `repeating-linear-gradient(90deg, #000 0px, #000 ${((Number(L.barcodeModule)||2.5) * SC * 0.5).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2.5) * SC * 0.5).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2.5) * (1 + (Number(L.barcodeRatio)||3)/2) * SC * 0.5).toFixed(1)}px)`,
         margin: '2px 0 1px', flexShrink: 0,
       }} />
+
       {/* Texto barcode */}
       <div style={{ fontSize: Math.max(4, fBc.size - 2), fontWeight: fBc.bold ? 900 : 400, textAlign: 'center', fontFamily: 'monospace', letterSpacing: 0.5 }}>
         B — — — — — — — —
