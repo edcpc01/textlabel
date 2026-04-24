@@ -277,8 +277,8 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ${renderField(mX, yCode, wCode, fCode, code1, 'L')}
 ${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
 ${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
-${renderField(mX, yL2, W - 140, fL2, `${desc} ${comp}`, 'L')}
-${renderField(504 - mX - 140, yL2, 140, fL2, `${maqFull} 6200${op}`, 'R')}
+${renderField(mX, yL2, W - 180, fL2, `${desc} ${comp}`, 'L')}
+${renderField(504 - mX - 180, yL2, 180, fL2, `${maqFull} 6200${op}`, 'R')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}

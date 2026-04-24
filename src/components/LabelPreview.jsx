@@ -140,19 +140,47 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,
       display: 'flex', flexDirection: 'column', gap: 1,
     }}>
-      {/* Linha 1 — código + data/hora */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, textShadow: fCode.bold ? '1px 0px 0px black, 0px 1px 0px black, 1px 1px 0px black' : 'none', letterSpacing: fCode.bold ? '0.8px' : '0.5px', lineHeight: 1 }}>{code1}</div>
-        <div style={{ textAlign: 'right', fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.4 }}>
-          <div>{dateFmt}</div>
-          <div>{emissaoHora || '—:—'}</div>
+      {/* Linha 1: Código (L) e Data/Hora (R) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px' }}>
+        <div style={{ 
+          fontSize: fCode.size, 
+          fontWeight: fCode.bold ? 900 : 700, 
+          textShadow: fCode.bold ? '1px 0px 0px black, 0px 1px 0px black, 1px 1px 0px black' : 'none',
+          lineHeight: 1,
+          flex: 1,
+          overflow: 'hidden',
+          whiteSpace: 'nowrap'
+        }}>
+          {code1}
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1 }}>{dateFmt}</div>
+          <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.2, paddingRight: '15%' }}>{emissaoHora || '—:—'}</div>
         </div>
       </div>
-      {/* Separador */}
-      <div style={{ borderTop: '1.5px solid #000', margin: '1px 0' }} />
-      {/* Linha 2 */}
-      <div style={{ fontSize: fL2.size, fontWeight: fL2.bold ? 900 : 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
-        {String(descricao || '').slice(0, 14)}&nbsp;&nbsp;{String(maquina || '').slice(0, 8)}&nbsp;&nbsp;{String(composicao || '').slice(0, 6)}&nbsp;&nbsp;6200{op}
+
+      {/* Linha 2: Desc+Comp (L) e Maq+6200 (R) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '2px', gap: '8px' }}>
+        <div style={{ 
+          fontSize: fL2.size, 
+          fontWeight: fL2.bold ? 900 : 700, 
+          whiteSpace: 'nowrap', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          lineHeight: 1.1,
+          flex: 1 
+        }}>
+          {desc} {comp}
+        </div>
+        <div style={{ 
+          fontSize: fL2.size, 
+          fontWeight: fL2.bold ? 900 : 700, 
+          lineHeight: 1.1,
+          flexShrink: 0,
+          textAlign: 'right'
+        }}>
+          {maqFull} 6200{op}
+        </div>
       </div>
       {/* Linha 3 */}
       <div style={{ fontSize: fL3.size, fontWeight: fL3.bold ? 900 : 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
