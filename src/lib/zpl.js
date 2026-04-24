@@ -154,18 +154,65 @@ ${b(rec2, f2 + 4, 393, H * 2)}
 ^XZ`
 }
 
-export function buildZPLCiclo(baseRecord, config, totalFusos, layout = {}) {
+// Calcula grupos de etiquetas por cabo (1, 2, 3 ou N/A)
+export function computeLabelGroups(cabos, totalFusos, descricao) {
+  const half  = Math.floor(totalFusos / 2)
+  const sixth = Math.floor(totalFusos / 6)
+  switch (String(cabos)) {
+    case '1': return [
+      { count: half,        descricao: (descricao || '') + ' S' },
+      { count: half,        descricao: (descricao || '') + ' Z' },
+    ]
+    case '2': return [
+      { count: half,        descricao: descricao || '' },
+    ]
+    case '3': return [
+      { count: sixth,       descricao: (descricao || '') + ' S' },
+      { count: sixth,       descricao: (descricao || '') + ' Z' },
+    ]
+    default:  return [
+      { count: totalFusos,  descricao: descricao || '' },
+    ]
+  }
+}
+
+// labelEntries: array de { ...record, fuso, descricao } — quando omitido usa comportamento padrão
+export function buildZPLCiclo(baseRecord, config, totalFusos, layout = {}, labelEntries = null) {
   const L = { ...LAYOUT_DEFAULT, ...layout }
-  const zpls = []
-  const totalBlocos = Math.ceil(totalFusos / 6)
+  const { vel = 3, dens = 15, offx = -24 } = config
+  const H = 236
+
+  const entries = labelEntries ||
+    Array.from({ length: totalFusos }, (_, i) => ({ ...baseRecord, fuso: i + 1 }))
+
+  const total       = entries.length
+  const totalBlocos = Math.ceil(total / 6)
+  const zpls        = []
+
+  const slot = (idx, ox, oy) => {
+    const e = entries[idx]
+    return e ? blocoEtiqueta(e, ox, oy, L) : ''
+  }
+
   for (let bloco = totalBlocos; bloco >= 1; bloco--) {
-    const fi = (bloco - 1) * 6 + 1
-    const f = n => Math.min(n, totalFusos)
-    zpls.push(buildZPLDuplo(
-      { ...baseRecord, fuso: f(fi) },
-      { ...baseRecord, fuso: f(fi + 1) },
-      config, totalFusos, L
-    ))
+    const fi = (bloco - 1) * 6
+    zpls.push(`^XA
+^MMT
+^PW786
+^LL${H * 3}
+^LS${offx}
+^LT0
+^PR${vel},${vel}
+~SD${dens}
+^CI28
+${slot(fi,     0,   0)}
+${slot(fi + 1, 393, 0)}
+${slot(fi + 2, 0,   H)}
+${slot(fi + 3, 393, H)}
+${slot(fi + 4, 0,   H * 2)}
+${slot(fi + 5, 393, H * 2)}
+^PQ1,0,1,Y
+^XZ`)
   }
   return zpls.join('\n')
 }

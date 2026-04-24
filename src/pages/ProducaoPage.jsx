@@ -7,7 +7,7 @@ import {
   emitirCiclo, getCicloAtualLoteMaq, getEmpresa, getLayout, auth,
   getImpressoraNilit, getOrCreateOperadorCode, getLayoutNilit, getProximoCicloNilitLoteMaq,
 } from '../lib/firebase'
-import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
+import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT, buildZPLCiclo, buildZPLNilitCiclo, printZPL, computeLabelGroups } from '../lib/zpl'
 import { gerarEImprimirFormularios } from '../components/Formularios'
 import { LabelPreview } from '../components/LabelPreview'
 
@@ -15,7 +15,7 @@ const EMPTY = {
   produto: '', maquina: '', lote: '',
   data: new Date().toISOString().split('T')[0],
   composicao: '', descricao: '', titulo: '', empresa: '', cnpj: '',
-  opacidade: '',
+  opacidade: '', cabos: 'N/A',
   po: '', lv: 'A',
 }
 
@@ -77,11 +77,34 @@ export function ProducaoPage() {
       empresa:    prod?.empresa   || f.empresa,
       cnpj:       prod?.cnpj      || f.cnpj,
       opacidade:  prod?.opacidade || f.opacidade,
+      cabos:      prod?.cabos     || 'N/A',
     }))
   }
 
-  const maqObj     = maquinas.find(m => m.cod === form.maquina)
-  const totalFusos = parseInt(maqObj?.fusos) || 0
+  const maqObj      = maquinas.find(m => m.cod === form.maquina)
+  const totalFusos  = parseInt(maqObj?.fusos) || 0
+
+  const cabos       = form.cabos || 'N/A'
+  const labelGroups = totalFusos > 0 ? computeLabelGroups(cabos, totalFusos, form.descricao) : []
+  const effectiveFusos = labelGroups.reduce((s, g) => s + g.count, 0)
+
+  function getLabelInfoText() {
+    if (!form.maquina || !totalFusos) return null
+    switch (cabos) {
+      case '1': {
+        const half = Math.floor(totalFusos / 2)
+        return `${effectiveFusos} etiquetas — ${half} torção S + ${half} torção Z (1 cabo)`
+      }
+      case '2':
+        return `${effectiveFusos} etiquetas — metade dos fusos de ${form.maquina} (2 cabos)`
+      case '3': {
+        const sixth = Math.floor(totalFusos / 6)
+        return `${effectiveFusos} etiquetas — ${sixth} torção S + ${sixth} torção Z (3 cabos)`
+      }
+      default:
+        return `${effectiveFusos} etiquetas — uma para cada fuso de ${form.maquina} (posições 1 a ${effectiveFusos})`
+    }
+  }
 
   const zplConfig = {
     vel:  configImpressora.vel  || 3,
@@ -104,6 +127,7 @@ export function ProducaoPage() {
     if (!form.composicao) erros.push('Composição')
     if (!form.descricao)  erros.push('Descrição')
     if (!totalFusos)      erros.push('Máquina sem Nº de Fusos cadastrado')
+    if (!effectiveFusos)  erros.push('Nº de fusos insuficiente para a qtde. de cabos selecionada')
     if (isNilit && !form.po) erros.push('Ordem de Produção (PO)')
     if (erros.length) { toast.error(`Obrigatório: ${erros.join(', ')}`); return }
 
@@ -114,6 +138,7 @@ export function ProducaoPage() {
 
       const { ciclo, lv: lvEmitido, totalFusos: nFusos, barcodes } = await emitirCiclo({
         ...form,
+        cabos,
         operador:     operadorCode,
         maquinaFusos: totalFusos,
         empresaNome:  form.empresa || 'EMPRESA',
@@ -122,11 +147,24 @@ export function ProducaoPage() {
         emissaoHora,
       })
 
+      // Monta entradas por fuso com descrição correta (torção S/Z quando aplicável)
+      let labelEntries = null
+      if (cabos !== 'N/A') {
+        const groups = computeLabelGroups(cabos, totalFusos, form.descricao)
+        labelEntries = []
+        let fusoNum = 1
+        for (const group of groups) {
+          for (let i = 0; i < group.count; i++) {
+            labelEntries.push({ ...form, ciclo, fuso: fusoNum++, descricao: group.descricao })
+          }
+        }
+      }
+
       let zplAll
       if (isNilit) {
         zplAll = buildZPLNilitCiclo({ ...form, ciclo, lv: lvEmitido, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos, layoutNilit)
       } else {
-        zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout)
+        zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout, labelEntries)
       }
 
       const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
@@ -203,10 +241,16 @@ export function ProducaoPage() {
         <div className="stat-card" style={{ borderTopColor: 'var(--yellow)' }}>
           <div className="stat-label">Máquina / Fusos</div>
           <div className="stat-value" style={{ fontSize: '1.1rem', paddingTop: '.3rem', color: 'var(--yellow)' }}>
-            {form.maquina || '—'}{totalFusos ? ` / ${totalFusos}` : ''}
+            {form.maquina || '—'}{effectiveFusos ? ` / ${effectiveFusos}` : ''}
           </div>
           <div className="stat-sub">
-            {totalFusos ? `${totalFusos} etiquetas por ciclo` : 'cadastre fusos na máquina'}
+            {!totalFusos
+              ? 'cadastre fusos na máquina'
+              : cabos === '1'
+                ? `${Math.floor(totalFusos/2)} S · ${Math.floor(totalFusos/2)} Z`
+                : cabos === '3'
+                  ? `${Math.floor(totalFusos/6)} S · ${Math.floor(totalFusos/6)} Z`
+                  : `${effectiveFusos} etiquetas por ciclo`}
           </div>
         </div>
       </div>
@@ -225,7 +269,7 @@ export function ProducaoPage() {
                   {isNilit ? (
                     <> · LV <strong style={{ color: 'var(--accent)' }}>{lvPreviewNilit}</strong></>
                   ) : null}
-                  {' '}→ {totalFusos} etiquetas
+                  {' '}→ {effectiveFusos} etiquetas
                 </span>
               )}
             </div>
@@ -306,15 +350,14 @@ export function ProducaoPage() {
                   background: 'rgba(0,212,255,.07)', border: '1px solid rgba(0,212,255,.2)',
                   fontSize: '.78rem', color: 'var(--text2)', lineHeight: 1.7,
                 }}>
-                  ✦ Este ciclo irá gerar <strong style={{ color: 'var(--accent)' }}>{totalFusos} etiquetas</strong> —
-                  uma para cada fuso da {form.maquina} (posições 1 a {totalFusos})
+                  ✦ Este ciclo irá gerar <strong style={{ color: 'var(--accent)' }}>{effectiveFusos} etiquetas</strong> — {getLabelInfoText()?.replace(/^\d+ etiquetas — /, '')}
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
                 <button className="btn btn-primary" onClick={emitir} disabled={loading}>
                   <Printer size={15} />
-                  {loading ? 'Emitindo...' : `Emitir Ciclo${totalFusos ? ` (${totalFusos} etiquetas)` : ''}`}
+                  {loading ? 'Emitindo...' : `Emitir Ciclo${effectiveFusos ? ` (${effectiveFusos} etiquetas)` : ''}`}
                 </button>
                 {!isNilit && !!ultimoFormulario && (
                   <button
@@ -340,7 +383,15 @@ export function ProducaoPage() {
               <span className="card-title">PREVIEW — FUSO 1</span>
             </div>
             <div className="card-body" style={{ padding: 0 }}>
-              <LabelPreview record={{ ...form, fuso: 1, ciclo: cicloPreview || 1 }} layout={layout} isNilit={isNilit} layoutNilit={layoutNilit} />
+              <LabelPreview
+                record={{
+                  ...form,
+                  fuso: 1,
+                  ciclo: cicloPreview || 1,
+                  descricao: labelGroups[0]?.descricao ?? form.descricao,
+                }}
+                layout={layout} isNilit={isNilit} layoutNilit={layoutNilit}
+              />
             </div>
           </div>
         </div>

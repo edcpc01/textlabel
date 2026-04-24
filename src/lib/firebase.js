@@ -169,6 +169,7 @@ export async function emitirCiclo({
   composicao, titulo, data, empresa, cnpj,
   empresaNome, userEmail, userName,
   po = '', operador = '', lv = 'A', opacidade = '', emissaoHora = '',
+  cabos = 'N/A',
 }) {
   const isNilit = (empresa || '').toLowerCase().includes('nilit')
 
@@ -182,8 +183,11 @@ export async function emitirCiclo({
     ciclo = await getNextCicloLoteMaq(lote, maquina)
   }
 
-  const totalFusos = Math.max(1, parseInt(maquinaFusos) || 1)
-  const ts         = serverTimestamp()
+  const totalMaqFusos = Math.max(1, parseInt(maquinaFusos) || 1)
+  const labelGroups   = computeLabelGroups(cabos, totalMaqFusos, descricao)
+  const totalFusos    = labelGroups.reduce((s, g) => s + g.count, 0)
+
+  const ts = serverTimestamp()
   let barcodeStart = null
   if (isNilit) {
     barcodeStart = await getNextBarcodeRange(totalFusos)
@@ -197,23 +201,28 @@ export async function emitirCiclo({
   const cicloRef = await addDoc(collection(db, 'emissoes'), {
     ciclo, lote, maquina, produto, descricao, composicao,
     titulo, data, totalFusos, empresa, cnpj, empresaNome,
-    po, operador, lv: lvFinal, opacidade, emissaoHora,
+    po, operador, lv: lvFinal, opacidade, emissaoHora, cabos,
     userEmail: userEmail || '',
     userName:  userName  || '',
     criadoEm: ts,
   })
 
   const batch = writeBatch(db)
-  for (let fuso = 1; fuso <= totalFusos; fuso++) {
-    batch.set(doc(collection(db, 'etiquetas')), {
-      ciclo, lote, maquina, fuso, produto, descricao,
-      composicao, titulo, data, empresa, cnpj, empresaNome,
-      po, operador, lv: lvFinal, opacidade, emissaoHora,
-      barcode: getBarcodeForFuso(fuso),
-      userEmail: userEmail || '',
-      userName:  userName  || '',
-      emissaoId: cicloRef.id, criadoEm: ts,
-    })
+  let fusoGlobal = 1
+  for (const group of labelGroups) {
+    for (let i = 0; i < group.count; i++) {
+      const fuso = fusoGlobal++
+      batch.set(doc(collection(db, 'etiquetas')), {
+        ciclo, lote, maquina, fuso, produto,
+        descricao: group.descricao,
+        composicao, titulo, data, empresa, cnpj, empresaNome,
+        po, operador, lv: lvFinal, opacidade, emissaoHora,
+        barcode: getBarcodeForFuso(fuso),
+        userEmail: userEmail || '',
+        userName:  userName  || '',
+        emissaoId: cicloRef.id, criadoEm: ts,
+      })
+    }
   }
   await batch.commit()
 
@@ -303,8 +312,8 @@ export async function getOrCreateOperadorCode(user) {
 }
 
 // ─── LAYOUT DA ETIQUETA ────────────────────────────────
-import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT } from './zpl.js'
-export { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT }
+import { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT, computeLabelGroups } from './zpl.js'
+export { LAYOUT_DEFAULT, LAYOUT_NILIT_DEFAULT, computeLabelGroups }
 
 export async function getLayout() {
   const snap = await getDoc(doc(db, 'meta', 'layout'))
