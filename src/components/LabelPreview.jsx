@@ -121,8 +121,10 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
   const lote3   = String(lote).replace(/\D/g, '').slice(0, 3).padStart(3, '0')
   const code1   = `${String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')}${maqN}${lote3}`
   const dateFmt = data ? data.split('-').reverse().join('/') : '—'
-  const op      = String(operador).slice(0, 4).padStart(4, '0')
-  const lvStr   = String(lv || 'A').toUpperCase()
+  const op      = String(record?.operador || record?.op || '0001').slice(0, 4).padStart(4, '0')
+  const lvStr   = String(record?.lv || 'A').toUpperCase()
+  const ciclo   = record?.ciclo || 1
+  const fuso    = record?.fuso || 1
 
   const fCode = pfH(L.fontCode)
   const fDate = pfH(L.fontDate)
@@ -130,9 +132,9 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
   const fL3 = pfH(L.fontL3)
   const fBc = pfH(L.fontBarcode)
 
-  const desc = String(descricao || '').slice(0, 16)
-  const comp = String(composicao || '').slice(0, 8)
-  const maqFull = String(maquina || '').slice(0, 8)
+  const desc = String(record?.descricao || '').slice(0, 16)
+  const comp = String(record?.composicao || '').slice(0, 8)
+  const maqFull = String(record?.maquina || '').slice(0, 8)
 
   return (
     <div className="label-preview-cell" style={{
