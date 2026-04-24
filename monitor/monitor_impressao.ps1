@@ -2,20 +2,65 @@
 # Monitora a pasta Downloads e imprime PDFs do TextLabel via SumatraPDF
 # Compativel com Windows PowerShell 5.x e PowerShell 7+
 #
+# SumatraPDF PORTATIL (sem instalacao):
+#   1. Baixe em: https://www.sumatrapdfreader.org/download-free-pdf-viewer
+#      (escolha "64-bit" em "Portable version")
+#   2. Coloque o arquivo SumatraPDF.exe na MESMA PASTA deste script
+#   3. Execute iniciar_monitor.bat
+#
 # Uso: duplo clique em iniciar_monitor.bat
-# Ou:  PowerShell -ExecutionPolicy Bypass -File monitor_impressao.ps1
 
 param(
     [string]$Impressora  = "",
-    [string]$SumatraPath = "C:\Program Files\SumatraPDF\SumatraPDF.exe",
+    [string]$SumatraPath = "",
     [string]$Pasta       = "$env:USERPROFILE\Downloads"
 )
 
-# --- Configuracao de impressora ---
-$configFile = Join-Path $PSScriptRoot "impressora.txt"
+$cfgImpressora = Join-Path $PSScriptRoot "impressora.txt"
+$cfgSumatra    = Join-Path $PSScriptRoot "sumatra_path.txt"
 
-if (-not $Impressora -and (Test-Path $configFile)) {
-    $Impressora = (Get-Content $configFile -Raw).Trim()
+# --- Localiza SumatraPDF ---
+if (-not $SumatraPath -and (Test-Path $cfgSumatra)) {
+    $SumatraPath = (Get-Content $cfgSumatra -Raw).Trim()
+}
+
+if (-not $SumatraPath -or -not (Test-Path $SumatraPath)) {
+    # Ordem de busca: pasta do script → LocalAppData → Program Files → Program Files (x86)
+    $candidatos = @(
+        (Join-Path $PSScriptRoot "SumatraPDF.exe"),
+        "$env:LOCALAPPDATA\SumatraPDF\SumatraPDF.exe",
+        "$env:LOCALAPPDATA\Programs\SumatraPDF\SumatraPDF.exe",
+        "C:\Program Files\SumatraPDF\SumatraPDF.exe",
+        "C:\Program Files (x86)\SumatraPDF\SumatraPDF.exe"
+    )
+    foreach ($c in $candidatos) {
+        if (Test-Path $c) { $SumatraPath = $c; break }
+    }
+}
+
+if (-not $SumatraPath -or -not (Test-Path $SumatraPath)) {
+    Write-Host ""
+    Write-Host "=== TextLabel - Monitor de Impressao ===" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "ERRO: SumatraPDF nao encontrado." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Como resolver (SEM permissao de admin):" -ForegroundColor Yellow
+    Write-Host "  1. Acesse: https://www.sumatrapdfreader.org/download-free-pdf-viewer"
+    Write-Host "  2. Clique em 'Portable version' (64-bit ou 32-bit)"
+    Write-Host "  3. Salve o arquivo SumatraPDF.exe nesta pasta:"
+    Write-Host "     $PSScriptRoot" -ForegroundColor Cyan
+    Write-Host "  4. Execute iniciar_monitor.bat novamente."
+    Write-Host ""
+    Read-Host "Pressione Enter para sair"
+    exit 1
+}
+
+# Salva caminho encontrado para proximas execucoes
+$SumatraPath | Out-File -FilePath $cfgSumatra -Encoding UTF8
+
+# --- Configuracao de impressora ---
+if (-not $Impressora -and (Test-Path $cfgImpressora)) {
+    $Impressora = (Get-Content $cfgImpressora -Raw).Trim()
 }
 
 if (-not $Impressora) {
@@ -25,21 +70,9 @@ if (-not $Impressora) {
     Write-Host "Digite o nome exato da impressora (Enter = impressora padrao do sistema):"
     $Impressora = (Read-Host "> ").Trim()
     if ($Impressora) {
-        $Impressora | Out-File -FilePath $configFile -Encoding UTF8
-        Write-Host "Impressora salva em: $configFile" -ForegroundColor Green
+        $Impressora | Out-File -FilePath $cfgImpressora -Encoding UTF8
+        Write-Host "Impressora salva em: $cfgImpressora" -ForegroundColor Green
     }
-}
-
-# --- Validacoes ---
-if (-not (Test-Path $SumatraPath)) {
-    Write-Host ""
-    Write-Host "ERRO: SumatraPDF nao encontrado em:" -ForegroundColor Red
-    Write-Host "  $SumatraPath" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "Baixe gratuitamente em: https://www.sumatrapdfreader.org"
-    Write-Host "Ou edite a variavel SumatraPath no topo deste script."
-    Read-Host "Pressione Enter para sair"
-    exit 1
 }
 
 if (-not (Test-Path $Pasta)) {
