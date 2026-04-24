@@ -130,8 +130,13 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
   const fL3 = pfH(L.fontL3)
   const fBc = pfH(L.fontBarcode)
 
+  const desc = String(descricao || '').slice(0, 16)
+  const comp = String(composicao || '').slice(0, 8)
+  const maqFull = String(maquina || '').slice(0, 8)
+  const op = String(record?.operador || '0001').slice(0, 4).padStart(4, '0')
+
   return (
-    <div style={{
+    <div className="label-preview-cell" style={{
       width: 240, height: 131,
       background: '#fff', color: '#000',
       fontFamily: 'Arial, Helvetica, sans-serif',
