@@ -1,39 +1,43 @@
 # monitor_impressao.ps1
 # Monitora a pasta Downloads e imprime PDFs do TextLabel via SumatraPDF
-# Uso: powershell -ExecutionPolicy Bypass -File monitor_impressao.ps1
-# Ou dê duplo clique em iniciar_monitor.bat
+# Compativel com Windows PowerShell 5.x e PowerShell 7+
+#
+# Uso: duplo clique em iniciar_monitor.bat
+# Ou:  PowerShell -ExecutionPolicy Bypass -File monitor_impressao.ps1
 
 param(
-    [string]$Impressora = "",
+    [string]$Impressora  = "",
     [string]$SumatraPath = "C:\Program Files\SumatraPDF\SumatraPDF.exe",
-    [string]$Pasta = "$env:USERPROFILE\Downloads"
+    [string]$Pasta       = "$env:USERPROFILE\Downloads"
 )
 
-# Se não passar impressora, tenta ler do arquivo de config local
-$configFile = "$PSScriptRoot\impressora.txt"
+# --- Configuracao de impressora ---
+$configFile = Join-Path $PSScriptRoot "impressora.txt"
+
 if (-not $Impressora -and (Test-Path $configFile)) {
     $Impressora = (Get-Content $configFile -Raw).Trim()
 }
 
 if (-not $Impressora) {
     Write-Host ""
-    Write-Host "=== TextLabel — Monitor de Impressao ===" -ForegroundColor Cyan
+    Write-Host "=== TextLabel - Monitor de Impressao ===" -ForegroundColor Cyan
     Write-Host "Nenhuma impressora configurada." -ForegroundColor Yellow
-    Write-Host "Digite o nome exato da impressora (ou Enter para usar a padrao do sistema):"
-    $Impressora = Read-Host "> "
+    Write-Host "Digite o nome exato da impressora (Enter = impressora padrao do sistema):"
+    $Impressora = (Read-Host "> ").Trim()
     if ($Impressora) {
-        $Impressora | Out-File $configFile -Encoding UTF8
-        Write-Host "Impressora salva em $configFile" -ForegroundColor Green
+        $Impressora | Out-File -FilePath $configFile -Encoding UTF8
+        Write-Host "Impressora salva em: $configFile" -ForegroundColor Green
     }
 }
 
+# --- Validacoes ---
 if (-not (Test-Path $SumatraPath)) {
     Write-Host ""
     Write-Host "ERRO: SumatraPDF nao encontrado em:" -ForegroundColor Red
     Write-Host "  $SumatraPath" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Baixe em: https://www.sumatrapdfreader.org/download-free-pdf-viewer"
-    Write-Host "Ou edite o caminho no topo deste script."
+    Write-Host "Baixe gratuitamente em: https://www.sumatrapdfreader.org"
+    Write-Host "Ou edite a variavel SumatraPath no topo deste script."
     Read-Host "Pressione Enter para sair"
     exit 1
 }
@@ -42,58 +46,56 @@ if (-not (Test-Path $Pasta)) {
     New-Item -ItemType Directory -Path $Pasta -Force | Out-Null
 }
 
+# --- Cabecalho ---
 Write-Host ""
-Write-Host "=== TextLabel — Monitor de Impressao ===" -ForegroundColor Cyan
-Write-Host "Pasta monitorada : $Pasta" -ForegroundColor White
+Write-Host "=== TextLabel - Monitor de Impressao ===" -ForegroundColor Cyan
+Write-Host "Pasta monitorada : $Pasta"
 if ($Impressora) {
-    Write-Host "Impressora       : $Impressora" -ForegroundColor White
+    Write-Host "Impressora       : $Impressora"
 } else {
-    Write-Host "Impressora       : (padrao do sistema)" -ForegroundColor White
+    Write-Host "Impressora       : (padrao do sistema)"
 }
-Write-Host "SumatraPDF       : $SumatraPath" -ForegroundColor White
+Write-Host "SumatraPDF       : $SumatraPath"
 Write-Host ""
-Write-Host "Aguardando PDFs do TextLabel (padrao F*.pdf)..." -ForegroundColor Green
+Write-Host "Aguardando PDFs TextLabel (F*.pdf)..." -ForegroundColor Green
 Write-Host "Pressione Ctrl+C para encerrar." -ForegroundColor DarkGray
 Write-Host ""
 
-$watcher = New-Object System.IO.FileSystemWatcher
-$watcher.Path            = $Pasta
-$watcher.Filter          = "F*.pdf"
-$watcher.NotifyFilter    = [System.IO.NotifyFilters]::FileName
-$watcher.IncludeSubdirectories = $false
-$watcher.EnableRaisingEvents   = $false
-
-$acaoImprimir = {
-    param($source, $e)
-    $arquivo = $e.FullPath
-    $nome    = $e.Name
-
-    # Pequena espera para o download completar
-    Start-Sleep -Milliseconds 1500
-
-    if (-not (Test-Path $arquivo)) { return }
-
-    Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Imprimindo: $nome" -ForegroundColor Yellow
-
-    try {
-        if ($using:Impressora) {
-            & $using:SumatraPath -print-to $using:Impressora -silent $arquivo
-        } else {
-            & $using:SumatraPath -print-to-default -silent $arquivo
-        }
-        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] OK: $nome" -ForegroundColor Green
-    } catch {
-        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ERRO ao imprimir ${nome}: $_" -ForegroundColor Red
-    }
+# --- Inicializa lista de arquivos ja existentes (nao reimprimir) ---
+$jaProcessados = @{}
+Get-ChildItem -Path $Pasta -Filter "F*.pdf" -ErrorAction SilentlyContinue | ForEach-Object {
+    $jaProcessados[$_.FullName] = $true
 }
 
-Register-ObjectEvent -InputObject $watcher -EventName "Created" -Action $acaoImprimir | Out-Null
-$watcher.EnableRaisingEvents = $true
+# --- Loop de monitoramento (polling a cada 3 segundos) ---
+while ($true) {
+    $arquivos = Get-ChildItem -Path $Pasta -Filter "F*.pdf" -ErrorAction SilentlyContinue
 
-try {
-    while ($true) { Start-Sleep -Seconds 1 }
-} finally {
-    $watcher.EnableRaisingEvents = $false
-    $watcher.Dispose()
-    Write-Host "Monitor encerrado." -ForegroundColor DarkGray
+    foreach ($arq in $arquivos) {
+        $caminho = $arq.FullName
+
+        if (-not $jaProcessados.ContainsKey($caminho)) {
+            $jaProcessados[$caminho] = $true
+
+            # Aguarda o download completar antes de imprimir
+            Start-Sleep -Milliseconds 1500
+
+            if (-not (Test-Path $caminho)) { continue }
+
+            Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Imprimindo: $($arq.Name)" -ForegroundColor Yellow
+
+            try {
+                if ($Impressora) {
+                    & $SumatraPath -print-to $Impressora -silent $caminho
+                } else {
+                    & $SumatraPath -print-to-default -silent $caminho
+                }
+                Write-Host "[$(Get-Date -Format 'HH:mm:ss')] OK: $($arq.Name)" -ForegroundColor Green
+            } catch {
+                Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ERRO ao imprimir $($arq.Name): $_" -ForegroundColor Red
+            }
+        }
+    }
+
+    Start-Sleep -Seconds 3
 }
