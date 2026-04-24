@@ -243,7 +243,6 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const hora = emissaoHora || ''
   const desc = String(descricao || '').slice(0, 16)
   const comp = String(composicao || '').slice(0, 8)
-  const maqFull = String(maquina || '').slice(0, 8)
   const op = String(operador || '').slice(0, 4).padStart(4, '0')
   const cicloStr = String(ciclo)
   const fusoStr = String(fuso)
@@ -251,11 +250,10 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const bR = Number(L.barcodeRatio) || 3.0
 
-  // Auto-limita bW para não ultrapassar a área de impressão
-  // Code 128: start(11) + N*11 + check(11) + stop(13) ≈ 35 + 11*N módulos
+  // Calcula bW máximo que cabe sem overflow (Code 128: ~35+11*N módulos)
+  // Ignora o valor configurado pois o Firebase pode guardar um valor antigo pequeno
   const approxModules = 35 + 11 * String(barcode).length
-  const maxBW = Math.max(1, Math.floor((504 - 2 * mX - 2) / approxModules))
-  const bW = Math.max(1, Math.min(Number(L.barcodeModule) || 2, maxBW))
+  const bW = Math.max(1, Math.floor((504 - 2 * mX - 2) / approxModules))
 
   let barcodeZPL = ''
   // IMPRESSÃO TRIPLA DO BARCODE (Para máxima espessura)
@@ -268,8 +266,14 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const dateFieldW = 10 * fDate.w                    // largura para "DD/MM/YYYY"
   const xDateR = rightEdge - dateFieldW              // alinhado à margem direita
   const opCode = `6200${op}`
-  const opFieldW = opCode.length * fL2.w + 4        // largura para "6200XXXX"
+  const opFieldW = opCode.length * fL2.w + 8        // largura para "6200XXXX" + folga
   const xOpR = rightEdge - opFieldW
+
+  // Linha 2 esquerda: maquina omitida (já está na linha 1 como FD04066)
+  // Truncagem explícita para garantir que não invade o campo direito
+  const leftW2 = xOpR - mX - 8
+  const maxL2Chars = Math.floor(leftW2 / fL2.w)
+  const leftLine2 = `${desc}  ${comp}`.slice(0, maxL2Chars)
 
   return `^XA
 ^MMT
@@ -283,7 +287,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ${renderField(mX, yCode, W - dateFieldW - 4, fCode, code1, 'L')}
 ${renderField(xDateR, yCode, dateFieldW, fDate, dateFmt, 'R')}
 ${renderField(xDateR, yCode + fDate.h + 1, dateFieldW, fDate, hora, 'C')}
-${renderField(mX, yL2, xOpR - mX - 4, fL2, `${desc}  ${maqFull}  ${comp}`, 'L')}
+${renderField(mX, yL2, leftW2, fL2, leftLine2, 'L')}
 ${renderField(xOpR, yL2, opFieldW, fL2, opCode, 'R')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
