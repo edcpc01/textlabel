@@ -161,7 +161,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       {/* Barcode simulado */}
       <div style={{
         height: pD(L.barcodeHeight),
-        background: 'repeating-linear-gradient(90deg, #000 0px, #000 1.5px, #fff 1.5px, #fff 3.5px)',
+        background: `repeating-linear-gradient(90deg, #000 0px, #000 ${((Number(L.barcodeModule)||2) * SC * 0.4).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2) * SC * 0.4).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2) * (1 + (Number(L.barcodeRatio)||3)/3) * SC * 0.5).toFixed(1)}px)`,
         margin: '2px 0 1px', flexShrink: 0,
       }} />
       {/* Texto barcode */}

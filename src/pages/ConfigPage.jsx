@@ -322,7 +322,7 @@ export function ConfigPage() {
                         Barcode e Margens
                       </div>
                       <NumSlider label="Altura do Barcode" value={layoutNilit.barcodeHeight} min={40} max={160} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeHeight: v}))} />
-                      <NumSlider label="Módulo do Barcode (largura barras)" value={layoutNilit.barcodeModule} min={1} max={4} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeModule: v}))} />
+                      <NumSlider label="Módulo do Barcode (largura barras)" value={layoutNilit.barcodeModule} min={1} max={4} step={0.1} onChange={v => setLayoutNilitLocal(l => ({...l, barcodeModule: v}))} />
                       <NumSlider label="Proporção de Barras (Ratio)" value={layoutNilit.barcodeRatio ?? 3.0} min={2.0} max={3.0} step={0.1} unit="" onChange={v => setLayoutNilitLocal(l => ({...l, barcodeRatio: v}))} />
                       <NumSlider label="Margem superior (topo)" value={layoutNilit.margemTop} min={0} max={30} onChange={v => setLayoutNilitLocal(l => ({...l, margemTop: v}))} />
                       <NumSlider label="Margem lateral (X)" value={layoutNilit.margemX} min={0} max={30} onChange={v => setLayoutNilitLocal(l => ({...l, margemX: v}))} />
