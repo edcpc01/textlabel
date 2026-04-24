@@ -271,9 +271,14 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const opFieldW = opCode.length * fL2.w + 4        // largura para "6200XXXX"
   const xOpR = barcodeRightEdge - opFieldW
 
-  // Linha 2 esquerda: inclui máquina (desc + maqFull + comp)
-  const leftLine2 = `${desc}  ${maqFull}  ${comp}`
-  const leftW2 = xOpR - mX - 4
+  // Linha 2: máquina em campo próprio, à esquerda do 62001000
+  // Deixa desc + comp sozinhos no espaço esquerdo (mais espaço p/ produto)
+  const descComp = (comp ? `${desc}  ${comp}` : desc)
+  const maqText = maqFull.trim()
+  const maqFieldW = maqText ? maqText.length * fL2.w + 4 : 0
+  const xMaqR = xOpR - 12                           // gap antes do 62001000
+  const xMaqL = xMaqR - maqFieldW
+  const leftW2 = (maqText ? xMaqL : xOpR) - mX - 4
 
   return `^XA
 ^MMT
@@ -284,10 +289,11 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-${renderField(mX, yCode, barcodeRightEdge - mX - dateFieldW - 4, fCode, code1, 'L')}
+${renderField(mX, yCode, xDateR - mX, fCode, code1, 'L')}
 ${renderField(xDateR, yCode, dateFieldW, fDate, dateFmt, 'R')}
 ${renderField(xDateR, yCode + fDate.h + 1, dateFieldW, fDate, hora, 'C')}
-${renderField(mX, yL2, leftW2, fL2, leftLine2, 'L')}
+${renderField(mX, yL2, leftW2, fL2, descComp, 'L')}
+${maqText ? renderField(xMaqL, yL2, maqFieldW, fL2, maqText, 'R') : ''}
 ${renderField(xOpR, yL2, opFieldW, fL2, opCode, 'R')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
