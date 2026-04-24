@@ -30,10 +30,13 @@ function parseFont(s) {
 function renderField(x, y, w, f, text, center = 'C') {
   const cmd = `^A0N,${f.h},${f.w}`
   const fb = `^FB${w},1,0,${center}`
-  let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
+  
+  // Comentário de depuração (visível ao abrir o arquivo .txt)
+  let res = `^FX FIELD:${text.slice(0,10)} BOLD:${f.bold} ^FS`
+  
+  res += `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
     // SUPER NEGRITO 9X (Matriz 3x3 de 1 dot)
-    // Carimba o texto 9 vezes para garantir espessura máxima
     for (let dx = 0; dx <= 2; dx++) {
       for (let dy = 0; dy <= 2; dy++) {
         if (dx === 0 && dy === 0) continue
