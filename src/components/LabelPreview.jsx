@@ -133,7 +133,6 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
   const desc = String(descricao || '').slice(0, 16)
   const comp = String(composicao || '').slice(0, 8)
   const maqFull = String(maquina || '').slice(0, 8)
-  const op = String(record?.operador || '0001').slice(0, 4).padStart(4, '0')
 
   return (
     <div className="label-preview-cell" style={{
