@@ -226,7 +226,6 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const mT = Number(L.margemTop) || 8
   const mX = Number(L.margemX) || 8
   const bH = Number(L.barcodeHeight) || 100
-  const bW = Math.max(1, Number(L.barcodeModule) || 2)
 
   // Y dinâmico baseado no layout
   const yCode = mT
@@ -236,10 +235,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const yBarcode = yL3 + fL3.h + 8
   const yBcText = yBarcode + bH + 4
 
-  // X direita — data e hora alinhadas à margem direita
   const W = 504 - 2 * mX
-  const xDate = 504 - mX - 10 * fDate.w - 20                    // DD/MM/YYYY + Recuo manual
-  const xTime = xDate + Math.floor((10 - 5) * fDate.w / 2)     // HH:MM centralizado
 
   const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
   const code1 = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
@@ -255,11 +251,25 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const bR = Number(L.barcodeRatio) || 3.0
 
+  // Auto-limita bW para não ultrapassar a área de impressão
+  // Code 128: ~(35 + 11 * N) módulos para N caracteres de dados
+  const approxModules = 35 + 11 * String(barcode).length
+  const maxBW = Math.max(1, Math.floor((504 - 2 * mX - 2) / approxModules))
+  const bW = Math.max(1, Math.min(Number(L.barcodeModule) || 2, maxBW))
+
   let barcodeZPL = ''
-  // IMPRESSÃO TRIPLA DO BARCODE (Para máxima espessura e preenchimento)
+  // IMPRESSÃO TRIPLA DO BARCODE (Para máxima espessura)
   for (let i = 0; i <= 2; i++) {
     barcodeZPL += `^FO${mX + i},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS\n`
   }
+
+  // Campos alinhados à margem direita (data, hora e 6200xxxx)
+  const rightEdge = 504 - mX
+  const dateFieldW = 10 * fDate.w                    // largura para "DD/MM/YYYY"
+  const xDateR = rightEdge - dateFieldW              // alinhado à margem direita
+  const opCode = `6200${op}`
+  const opFieldW = opCode.length * fL2.w + 4        // largura para "6200XXXX"
+  const xOpR = rightEdge - opFieldW
 
   return `^XA
 ^MMT
@@ -270,10 +280,11 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-${renderField(mX, yCode, W, fCode, code1, 'L')}
-${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
-${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
-${renderField(mX, yL2, W, fL2, `${desc}  ${maqFull}  ${comp}  6200${op}`, 'L')}
+${renderField(mX, yCode, W - dateFieldW - 4, fCode, code1, 'L')}
+${renderField(xDateR, yCode, dateFieldW, fDate, dateFmt, 'R')}
+${renderField(xDateR, yCode + fDate.h + 1, dateFieldW, fDate, hora, 'C')}
+${renderField(mX, yL2, xOpR - mX - 4, fL2, `${desc}  ${maqFull}  ${comp}`, 'L')}
+${renderField(xOpR, yL2, opFieldW, fL2, opCode, 'R')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
