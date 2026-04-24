@@ -31,10 +31,7 @@ function renderField(x, y, w, f, text, center = 'C') {
   const cmd = `^A0N,${f.h},${f.w}`
   const fb = `^FB${w},1,0,${center}`
   
-  // Comentário de depuração (visível ao abrir o arquivo .txt)
-  let res = `^FX FIELD:${text.slice(0,10)} BOLD:${f.bold} ^FS`
-  
-  res += `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
+  let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
     // SUPER NEGRITO 9X (Matriz 3x3 com salto de 2 dots para máxima espessura)
     for (let dx = 0; dx <= 4; dx += 2) {
