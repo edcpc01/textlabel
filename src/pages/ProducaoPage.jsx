@@ -15,9 +15,11 @@ const EMPTY = {
   produto: '', maquina: '', lote: '',
   data: new Date().toISOString().split('T')[0],
   composicao: '', descricao: '', titulo: '', empresa: '', cnpj: '',
-  opacidade: '', cabos: 'N/A',
+  opacidade: '', cabos: '',
   po: '', lv: 'A',
 }
+
+const RPR_DESC = 'RPR TEXTRIZADORA CONV. SINGLE'
 
 export function ProducaoPage() {
   const [form, setForm]                 = useState(EMPTY)
@@ -25,7 +27,7 @@ export function ProducaoPage() {
   const [maquinas, setMaquinas]         = useState([])
   const [cicloPreview, setCicloPreview] = useState(null)
   const [lvPreviewNilit, setLvPreviewNilit] = useState('A')
-  const [ultimoFormulario, setUltimoFormulario] = useState(null)
+  const [ultimosFormularios, setUltimosFormularios] = useState([])
   const [configImpressora, setConfigImpressora] = useState({})
   const [configNilit, setConfigNilit]   = useState({ vel: 2, dens: 30, offx: 0 })
   const [operadorCode, setOperadorCode] = useState('0000')
@@ -77,29 +79,33 @@ export function ProducaoPage() {
       empresa:    prod?.empresa   || f.empresa,
       cnpj:       prod?.cnpj      || f.cnpj,
       opacidade:  prod?.opacidade || f.opacidade,
-      cabos:      prod?.cabos     || 'N/A',
+      cabos:      ['1','2','3'].includes(prod?.cabos) ? prod.cabos : '',
     }))
   }
 
   const maqObj      = maquinas.find(m => m.cod === form.maquina)
   const totalFusos  = parseInt(maqObj?.fusos) || 0
 
-  const cabos       = form.cabos || 'N/A'
-  const labelGroups = totalFusos > 0 ? computeLabelGroups(cabos, totalFusos, form.descricao) : []
+  // Torção só se aplica em máquinas RPR TEXTRIZADORA CONV. SINGLE
+  const isRPR = (maqObj?.desc || '').toUpperCase().includes(RPR_DESC)
+  const cabos = form.cabos || ''
+  const effectiveCabos = isRPR && ['1','2','3'].includes(cabos) ? cabos : ''
+
+  const labelGroups    = totalFusos > 0 ? computeLabelGroups(effectiveCabos, totalFusos, form.descricao) : []
   const effectiveFusos = labelGroups.reduce((s, g) => s + g.count, 0)
 
   function getLabelInfoText() {
     if (!form.maquina || !totalFusos) return null
-    switch (cabos) {
+    switch (effectiveCabos) {
       case '1': {
         const half = Math.floor(totalFusos / 2)
-        return `${effectiveFusos} etiquetas — ${half} torção S + ${half} torção Z (1 cabo)`
+        return `${effectiveFusos} etiquetas — ${half} torção "S" + ${half} torção "Z" (1 cabo)`
       }
       case '2':
         return `${effectiveFusos} etiquetas — metade dos fusos de ${form.maquina} (2 cabos)`
       case '3': {
         const sixth = Math.floor(totalFusos / 6)
-        return `${effectiveFusos} etiquetas — ${sixth} torção S + ${sixth} torção Z (3 cabos)`
+        return `${effectiveFusos} etiquetas — ${sixth} torção "S" + ${sixth} torção "Z" (3 cabos)`
       }
       default:
         return `${effectiveFusos} etiquetas — uma para cada fuso de ${form.maquina} (posições 1 a ${effectiveFusos})`
@@ -138,7 +144,7 @@ export function ProducaoPage() {
 
       const { ciclo, lv: lvEmitido, totalFusos: nFusos, barcodes } = await emitirCiclo({
         ...form,
-        cabos,
+        cabos: effectiveCabos,
         operador:     operadorCode,
         maquinaFusos: totalFusos,
         empresaNome:  form.empresa || 'EMPRESA',
@@ -147,10 +153,10 @@ export function ProducaoPage() {
         emissaoHora,
       })
 
-      // Monta entradas por fuso com descrição correta (torção S/Z quando aplicável)
+      // Monta entradas por fuso com descrição correta (torção "S"/"Z" quando aplicável)
       let labelEntries = null
-      if (cabos !== 'N/A') {
-        const groups = computeLabelGroups(cabos, totalFusos, form.descricao)
+      if (effectiveCabos) {
+        const groups = computeLabelGroups(effectiveCabos, totalFusos, form.descricao)
         labelEntries = []
         let fusoNum = 1
         for (const group of groups) {
@@ -171,24 +177,41 @@ export function ProducaoPage() {
       await printZPL(zplAll, filename)
 
       if (!isNilit) {
-        const dadosFormulario = {
+        const baseFormulario = {
           maquina:    form.maquina,
           lote:       form.lote,
           ciclo,
-          descricao:  form.descricao,
           composicao: form.composicao,
           titulo:     form.titulo,
           empresa:    form.empresa,
           cnpj:       form.cnpj,
           data:       form.data,
-          totalFusos: nFusos,
           impressoraRede: configImpressora.impressoraRede,
         }
-        setUltimoFormulario(dadosFormulario)
-        gerarEImprimirFormularios(dadosFormulario).catch(err =>
-          toast.error('Erro ao gerar PDF: ' + err.message)
+
+        // Para 1 ou 3 cabos em máquina RPR: gera um kit PDF por grupo (S e Z)
+        const hasTorcaoGroups = ['1','3'].includes(effectiveCabos)
+        let formularios
+        if (hasTorcaoGroups) {
+          const groups = computeLabelGroups(effectiveCabos, totalFusos, form.descricao)
+          formularios = groups.map(g => ({ ...baseFormulario, descricao: g.descricao, totalFusos: g.count }))
+        } else {
+          formularios = [{ ...baseFormulario, descricao: form.descricao, totalFusos: nFusos }]
+        }
+
+        setUltimosFormularios(formularios)
+        // Gera PDFs em sequência para evitar conflito de download
+        formularios.reduce(
+          (p, f) => p.then(() => gerarEImprimirFormularios(f)),
+          Promise.resolve()
+        ).catch(err => toast.error('Erro ao gerar PDF: ' + err.message))
+
+        toast(
+          hasTorcaoGroups
+            ? `Gerando ${formularios.length} PDFs de formulário ("S" e "Z")…`
+            : 'Gerando PDF do formulário…',
+          { icon: '📄' }
         )
-        toast('Gerando PDF do formulário…', { icon: '📄' })
       }
 
       if (isNilit) {
@@ -246,10 +269,10 @@ export function ProducaoPage() {
           <div className="stat-sub">
             {!totalFusos
               ? 'cadastre fusos na máquina'
-              : cabos === '1'
-                ? `${Math.floor(totalFusos/2)} S · ${Math.floor(totalFusos/2)} Z`
-                : cabos === '3'
-                  ? `${Math.floor(totalFusos/6)} S · ${Math.floor(totalFusos/6)} Z`
+              : effectiveCabos === '1'
+                ? `${Math.floor(totalFusos/2)} "S" · ${Math.floor(totalFusos/2)} "Z"`
+                : effectiveCabos === '3'
+                  ? `${Math.floor(totalFusos/6)} "S" · ${Math.floor(totalFusos/6)} "Z"`
                   : `${effectiveFusos} etiquetas por ciclo`}
           </div>
         </div>
@@ -359,15 +382,22 @@ export function ProducaoPage() {
                   <Printer size={15} />
                   {loading ? 'Emitindo...' : `Emitir Ciclo${effectiveFusos ? ` (${effectiveFusos} etiquetas)` : ''}`}
                 </button>
-                {!isNilit && !!ultimoFormulario && (
+                {!isNilit && ultimosFormularios.length > 0 && (
                   <button
                     className="btn btn-ghost btn-sm"
                     onClick={() => {
-                      gerarEImprimirFormularios(ultimoFormulario)
-                      toast.success('Formulário reenviado para download.')
+                      ultimosFormularios.reduce(
+                        (p, f) => p.then(() => gerarEImprimirFormularios(f)),
+                        Promise.resolve()
+                      )
+                      toast.success(
+                        ultimosFormularios.length > 1
+                          ? `${ultimosFormularios.length} formulários reenviados.`
+                          : 'Formulário reenviado para download.'
+                      )
                     }}
                   >
-                    Reimprimir Formulário
+                    Reimprimir Formulário{ultimosFormularios.length > 1 ? ` (${ultimosFormularios.length})` : ''}
                   </button>
                 )}
                 <button className="btn btn-ghost btn-sm" onClick={() => setForm(EMPTY)}>Limpar</button>

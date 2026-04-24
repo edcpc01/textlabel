@@ -101,7 +101,7 @@ function EditableRow({ columns, row, onSave, onDelete }) {
 // ─── PRODUTOS ─────────────────────────────────────────
 function ProdutosCard({ produtos }) {
   const [f, setF] = useState({
-    empresa: '', cnpj: '', cod: '', desc: '', comp: '', titulo: '', un: 'kg', opacidade: '', cabos: 'N/A'
+    empresa: '', cnpj: '', cod: '', desc: '', comp: '', titulo: '', un: 'kg', opacidade: '', cabos: ''
   })
 
   useEffect(() => {
@@ -118,7 +118,7 @@ function ProdutosCard({ produtos }) {
       toast.error('Código já existe.'); return
     }
     await addProduto({ ...f, cod: f.cod.toUpperCase(), opacidade: f.opacidade.toUpperCase() })
-    setF(p => ({ ...p, cod: '', desc: '', comp: '', titulo: '', un: 'kg', opacidade: '', cabos: 'N/A' }))
+    setF(p => ({ ...p, cod: '', desc: '', comp: '', titulo: '', un: 'kg', opacidade: '', cabos: '' }))
     toast.success('Produto salvo!')
   }
 
@@ -131,7 +131,7 @@ function ProdutosCard({ produtos }) {
       titulo:    draft.titulo    || '',
       un:        draft.un        || 'kg',
       opacidade: draft.opacidade || '',
-      cabos:     draft.cabos     || 'N/A',
+      cabos:     ['1','2','3'].includes(draft.cabos) ? draft.cabos : '',
     })
     toast.success('Produto atualizado!')
   }
@@ -148,8 +148,8 @@ function ProdutosCard({ produtos }) {
     { key: 'titulo',    label: 'Título (Dtex)' },
     { key: 'un',        label: 'Un.', editType: 'select', options: ['kg','g','m','con'],
       render: v => <span className="badge badge-orange">{v}</span> },
-    { key: 'cabos',     label: 'Cabos', editType: 'select', options: ['N/A','1','2','3'],
-      render: v => <span className="badge badge-blue">{v || 'N/A'}</span> },
+    { key: 'cabos',     label: 'Cabos', editType: 'select', options: ['','1','2','3'],
+      render: v => <span className="badge badge-blue">{v || '—'}</span> },
   ]
 
   return (
@@ -210,7 +210,7 @@ function ProdutosCard({ produtos }) {
             <label className="form-label">Qtde. Cabos <span style={{ color: 'var(--muted)', fontSize: '.75em' }}>(torção)</span></label>
             <select className="form-control" value={f.cabos}
               onChange={e => setF(p => ({ ...p, cabos: e.target.value }))}>
-              <option value="N/A">N/A</option>
+              <option value="">— Padrão —</option>
               <option value="1">1 cabo</option>
               <option value="2">2 cabos</option>
               <option value="3">3 cabos</option>
