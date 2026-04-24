@@ -105,15 +105,19 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
   // Escala: ZPL 504×276 dots → preview 240×131px
   const SC  = 240 / 504
   const pfH = s => {
-    const parts = String(s).split(',')
+    const parts = String(s || '16,14').split(',')
     const h = Number(parts[0]) || 16
     const bold = parts[2] === 'B'
+    const size = Math.round(h * SC)
     return {
-      size: Math.max(5, Math.round(h * SC)),
+      size: isNaN(size) ? 8 : Math.max(5, size),
       bold
     }
   }
-  const pD  = d => Math.max(1, Math.round(Number(d) * SC))
+  const pD  = d => {
+    const val = Math.round(Number(d || 0) * SC)
+    return isNaN(val) ? 1 : Math.max(1, val)
+  }
 
   const maqN    = String(maquina).replace(/\D/g, '').slice(-2).padStart(2, '0')
   const lote3   = String(lote).replace(/\D/g, '').slice(0, 3).padStart(3, '0')
@@ -192,8 +196,8 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       </div>
       {/* Barcode simulado */}
       <div style={{
-        height: pD(L.barcodeHeight),
-        background: `repeating-linear-gradient(90deg, #000 0px, #000 ${((Number(L.barcodeModule)||2) * SC * 0.4).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2) * SC * 0.4).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2) * (1 + (Number(L.barcodeRatio)||3)/3) * SC * 0.5).toFixed(1)}px)`,
+        height: pD(L.barcodeHeight || 60),
+        background: `repeating-linear-gradient(90deg, #000 0px, #000 ${((Number(L.barcodeModule)||2.5) * SC * 0.5).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2.5) * SC * 0.5).toFixed(1)}px, #fff ${((Number(L.barcodeModule)||2.5) * (1 + (Number(L.barcodeRatio)||3)/2) * SC * 0.5).toFixed(1)}px)`,
         margin: '2px 0 1px', flexShrink: 0,
       }} />
       {/* Texto barcode */}
