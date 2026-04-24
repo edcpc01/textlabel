@@ -194,7 +194,7 @@ export const LAYOUT_NILIT_DEFAULT = {
   fontL3: '20,14',  // Linha 3 — PO / CG / LV / POS
   fontBarcode: '20,16',  // Texto abaixo do barcode
   barcodeHeight: 100,      // Altura do barcode em dots
-  barcodeModule: 2,        // Largura do módulo (BY — 1 a 4 dots)
+  barcodeModule: 3,        // Largura do módulo (BY — 1 a 4 dots)
   barcodeRatio: 3.0,      // Proporção barras largas/finas (2.0 a 3.0)
   margemTop: 8,
   margemX: 8,
@@ -252,7 +252,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const bR = Number(L.barcodeRatio) || 3.0
 
   // Auto-limita bW para não ultrapassar a área de impressão
-  // Code 128: ~(35 + 11 * N) módulos para N caracteres de dados
+  // Code 128: start(11) + N*11 + check(11) + stop(13) ≈ 35 + 11*N módulos
   const approxModules = 35 + 11 * String(barcode).length
   const maxBW = Math.max(1, Math.floor((504 - 2 * mX - 2) / approxModules))
   const bW = Math.max(1, Math.min(Number(L.barcodeModule) || 2, maxBW))
