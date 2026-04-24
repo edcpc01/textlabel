@@ -1,0 +1,24 @@
+TextLabel - Impressao USB Automatica
+=====================================
+SEM INSTALACAO. So Windows 10/11.
+
+COMO USAR:
+  1. Clique duas vezes em MONITOR-USB.bat
+  2. Mantenha a janela aberta
+  3. No TextLabel, clique em Emitir Ciclo
+     -> o arquivo ZPL e baixado na pasta Downloads
+     -> o monitor detecta e envia para USB
+     -> imprime automaticamente!
+  4. Os arquivos impressos vao para:
+     Downloads\Impressos\
+
+INICIAR COM O WINDOWS (opcional):
+  1. Win+R -> shell:startup -> Enter
+  2. Copie o .bat para essa pasta
+
+PROBLEMAS:
+  - Nada imprime: verifique se a janela
+    do monitor esta aberta
+  - Porta errada: edite o .bat e troque
+    USB001 pelo numero correto (USB002 etc)
+=====================================
