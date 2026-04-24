@@ -33,9 +33,9 @@ function renderField(x, y, w, f, text, center = 'C') {
 
   let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
-    // SUPER NEGRITO 3X (Matriz 2x2 com salto de 2 dots para máxima espessura)
-    for (let dx = 0; dx <= 4; dx += 2) {
-      for (let dy = 0; dy <= 4; dy += 2) {
+    // SUPER NEGRITO 2X (Matriz 2x2 com salto de 2 dots para boa espessura sem borrar)
+    for (let dx = 0; dx <= 2; dx += 2) {
+      for (let dy = 0; dy <= 2; dy += 2) {
         if (dx === 0 && dy === 0) continue
         res += `^FO${x + dx},${y + dy}${fb}${cmd}^FD${text}^FS`
       }
@@ -262,7 +262,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
     barcodeZPL += `^FO${mX + i},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS\n`
   }
 
-  const xDate = 504 - mX - 10 * fDate.w
+  const xDate = 504 - mX - 10 * fDate.w - 10
   const wCode = xDate - mX - 5
 
   return `^XA
@@ -278,7 +278,7 @@ ${renderField(mX, yCode, wCode, fCode, code1, 'L')}
 ${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
 ${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
 ${renderField(mX, yL2, W - 180, fL2, `${desc} ${comp}`, 'L')}
-${renderField(504 - mX - 180, yL2, 180, fL2, `${maqFull} 6200${op}`, 'R')}
+${renderField(504 - mX - 180 - 10, yL2, 180, fL2, `${maqFull} 6200${op}`, 'R')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}

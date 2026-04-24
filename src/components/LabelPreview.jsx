@@ -144,12 +144,11 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,
       display: 'flex', flexDirection: 'column', gap: 1,
     }}>
-      {/* Linha 1: Código (L) e Data/Hora (R) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px', paddingRight: '10px' }}>
         <div style={{ 
           fontSize: fCode.size, 
           fontWeight: fCode.bold ? 900 : 700, 
-          textShadow: fCode.bold ? '1px 0px 0px black, 0px 1px 0px black, 1px 1px 0px black' : 'none',
+          textShadow: fCode.bold ? '1px 1px 0px black' : 'none',
           lineHeight: 1,
           flex: 1,
           overflow: 'hidden',
@@ -158,13 +157,13 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
           {code1}
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1 }}>{dateFmt}</div>
+          <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1 }}>{dataFmt}</div>
           <div style={{ fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.2, paddingRight: '15%' }}>{emissaoHora || '—:—'}</div>
         </div>
       </div>
 
       {/* Linha 2: Desc+Comp (L) e Maq+6200 (R) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '2px', gap: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '2px', gap: '8px', paddingRight: '10px' }}>
         <div style={{ 
           fontSize: fL2.size, 
           fontWeight: fL2.bold ? 900 : 700, 
