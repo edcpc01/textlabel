@@ -56,7 +56,7 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
       padding: `${Math.round(Number(L.margemTop||8)*SC*0.6)}px ${Math.round(mX*SC*0.6)}px`,
     }}>
       {/* L1 Empresa */}
-      <div style={{ textAlign: 'center', fontSize: fEmp.size, fontWeight: fEmp.bold ? 900 : 700, textShadow: fEmp.bold ? '0.6px 0px 0px black, 0px 0.6px 0px black, 0.6px 0.6px 0px black' : 'none', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ textAlign: 'center', fontSize: fEmp.size, fontWeight: fEmp.bold ? 900 : 700, fontFamily: fEmp.bold ? 'monospace, sans-serif' : 'inherit', letterSpacing: fEmp.bold ? '1px' : 'normal', textShadow: fEmp.bold ? '0.6px 0px 0px black, 0px 0.6px 0px black' : 'none', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {empresa || '— EMPRESA —'}
       </div>
       {/* L2 CNPJ */}
@@ -64,7 +64,7 @@ function CelulaEtiqueta({ record, fusoNum, layout = {} }) {
         {cnpj ? `CNPJ: ${cnpj}` : '—'}
       </div>
       {/* L3 Descrição */}
-      <div style={{ textAlign: 'center', fontSize: fDesc.size, fontWeight: fDesc.bold ? 900 : 700, textShadow: fDesc.bold ? '0.6px 0px 0px black, 0px 0.6px 0px black, 0.6px 0.6px 0px black' : 'none', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ textAlign: 'center', fontSize: fDesc.size, fontWeight: fDesc.bold ? 900 : 700, fontFamily: fDesc.bold ? 'monospace, sans-serif' : 'inherit', letterSpacing: fDesc.bold ? '1px' : 'normal', textShadow: fDesc.bold ? '0.6px 0px 0px black, 0px 0.6px 0px black' : 'none', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {descricao || '—'}
       </div>
       {/* L4 Composição */}
@@ -142,7 +142,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
     }}>
       {/* Linha 1 — código + data/hora */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, textShadow: fCode.bold ? '0.8px 0px 0px black, 0px 0.8px 0px black, 0.8px 0.8px 0px black' : 'none', letterSpacing: 0.5, lineHeight: 1 }}>{code1}</div>
+        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, fontFamily: fCode.bold ? 'monospace, sans-serif' : 'inherit', textShadow: fCode.bold ? '0.8px 0px 0px black, 0px 0.8px 0px black' : 'none', letterSpacing: fCode.bold ? '1.5px' : '0.5px', lineHeight: 1 }}>{code1}</div>
         <div style={{ textAlign: 'right', fontSize: fDate.size, fontWeight: fDate.bold ? 900 : 700, lineHeight: 1.4 }}>
           <div>{dateFmt}</div>
           <div>{emissaoHora || '—:—'}</div>

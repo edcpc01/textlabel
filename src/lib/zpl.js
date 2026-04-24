@@ -28,14 +28,15 @@ function parseFont(s) {
 }
 
 function renderField(x, y, w, f, text, center = 'C') {
-  const cmd = `^A0N,${f.h},${f.w}`
+  // f.bold ? Fonte D (Negrito Nativo) : Fonte 0 (Scalable Normal)
+  const fontType = f.bold ? 'D' : '0'
+  const cmd = `^A${fontType}N,${f.h},${f.w}`
   const fb = `^FB${w},1,0,${center}`
+  
   let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
-    // Negrito EXTRA PESADO (2 dots de deslocamento para maior visibilidade)
-    res += `^FO${x + 2},${y}${fb}${cmd}^FD${text}^FS`
-    res += `^FO${x},${y + 2}${fb}${cmd}^FD${text}^FS`
-    res += `^FO${x + 2},${y + 2}${fb}${cmd}^FD${text}^FS`
+    // Reforço extra de 1 dot para a Fonte D ficar 'Super Heavy'
+    res += `^FO${x + 1},${y}${fb}${cmd}^FD${text}^FS`
   }
   return res
 }
