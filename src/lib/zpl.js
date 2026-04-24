@@ -255,6 +255,14 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const bR = Number(L.barcodeRatio) || 3.0
 
+  const bW_int = Math.floor(bW)
+  const hasFraction = bW % 1 !== 0
+  let barcodeZPL = `^FO${mX},${yBarcode}^BY${bW_int},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS`
+  if (hasFraction) {
+    // Micro-expansão: carimba uma segunda vez com 1 dot de offset
+    barcodeZPL += `^FO${mX + 1},${yBarcode}^BY${bW_int},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS`
+  }
+
   return `^XA
 ^MMT
 ^PW504
@@ -266,10 +274,10 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^CI28
 ${renderField(mX, yCode, W, fCode, code1, 'L')}
 ${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
-${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'R')}
+${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
 ${renderField(mX, yL2, W, fL2, `${desc}  ${maqFull}  ${comp}  6200${op}`, 'L')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
-^FO${mX},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS
+${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
 ^PQ1,0,1,Y
 ^XZ`
