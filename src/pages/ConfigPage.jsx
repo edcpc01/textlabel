@@ -154,7 +154,7 @@ export function ConfigPage() {
     const v = parseInt(editando.valor)
     if (isNaN(v) || v < 1) { toast.error('Valor inválido.'); return }
     if (!confirm(`Definir ciclo de ${editando.maquina} / ${editando.lote} para ${v}?`)) return
-    await setCicloManualLoteMaq(editando.lote, editando.maquina, v)
+    await setCicloManualLoteMaq(editando.lote, editando.maquina, v, editando.produto)
     setEditando(null)
     toast.success('Ciclo atualizado!')
   }

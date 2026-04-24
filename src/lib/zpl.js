@@ -289,7 +289,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const code1 = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
   const dateFmt = data ? data.split('-').reverse().join('/') : ''
   const hora = emissaoHora || ''
-  const desc = String(descricao || '').slice(0, 16)
+  const desc = String(descricao || '').slice(0, 22)
   const comp = String(composicao || '').slice(0, 8)
   const maqFull = String(maquina || '').slice(0, 8)
   const op = String(operador || '').slice(0, 4).padStart(4, '0')

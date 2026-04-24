@@ -43,21 +43,21 @@ export const resetSenha   = (email)       => sendPasswordResetEmail(auth, email)
 export const loginGoogle  = ()            => signInWithPopup(auth, new GoogleAuthProvider())
 
 // ─── CICLO POR LOTE + MÁQUINA ──────────────────────────
-function cicloDocId(lote, maquina) {
+function cicloDocId(lote, maquina, produto) {
   const safe = s => String(s).replace(/[^a-zA-Z0-9\-_]/g, '_')
-  return `${safe(lote)}__${safe(maquina)}`
+  return `${safe(lote)}__${safe(maquina)}__${safe(produto || '')}`
 }
 
 const NILIT_LV_SEQ = ['A', 'B', 'C', 'D', 'E']
 
-export async function getNextCicloLoteMaq(lote, maquina) {
-  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina))
+export async function getNextCicloLoteMaq(lote, maquina, produto) {
+  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina, produto))
   let nextCiclo
   await runTransaction(db, async tx => {
     const snap = await tx.get(ref)
     if (!snap.exists()) {
       nextCiclo = 1
-      tx.set(ref, { lote, maquina, valor: 2, atualizadoEm: serverTimestamp() })
+      tx.set(ref, { lote, maquina, produto: produto || '', valor: 2, atualizadoEm: serverTimestamp() })
     } else {
       nextCiclo = snap.data().valor
       tx.update(ref, { valor: nextCiclo + 1, atualizadoEm: serverTimestamp() })
@@ -66,8 +66,8 @@ export async function getNextCicloLoteMaq(lote, maquina) {
   return nextCiclo
 }
 
-export async function getNextCicloNilitLoteMaq(lote, maquina) {
-  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina))
+export async function getNextCicloNilitLoteMaq(lote, maquina, produto) {
+  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina, produto))
   let cicloAtual = 1
   let lvAtual = 'A'
 
@@ -80,8 +80,9 @@ export async function getNextCicloNilitLoteMaq(lote, maquina) {
       tx.set(ref, {
         lote,
         maquina,
+        produto: produto || '',
         valor: 1,
-        lvIndex: 1, // proximo LV = B
+        lvIndex: 1,
         atualizadoEm: serverTimestamp(),
       })
       return
@@ -113,9 +114,9 @@ export async function getNextCicloNilitLoteMaq(lote, maquina) {
   return { ciclo: cicloAtual, lv: lvAtual }
 }
 
-export async function getProximoCicloNilitLoteMaq(lote, maquina) {
+export async function getProximoCicloNilitLoteMaq(lote, maquina, produto) {
   if (!lote || !maquina) return { ciclo: 1, lv: 'A' }
-  const snap = await getDoc(doc(db, 'ciclos', cicloDocId(lote, maquina)))
+  const snap = await getDoc(doc(db, 'ciclos', cicloDocId(lote, maquina, produto)))
   if (!snap.exists()) return { ciclo: 1, lv: 'A' }
 
   const data = snap.data() || {}
@@ -124,19 +125,19 @@ export async function getProximoCicloNilitLoteMaq(lote, maquina) {
   return { ciclo, lv: NILIT_LV_SEQ[lvIndex] || 'A' }
 }
 
-export async function getCicloAtualLoteMaq(lote, maquina) {
+export async function getCicloAtualLoteMaq(lote, maquina, produto) {
   if (!lote || !maquina) return null
-  const snap = await getDoc(doc(db, 'ciclos', cicloDocId(lote, maquina)))
+  const snap = await getDoc(doc(db, 'ciclos', cicloDocId(lote, maquina, produto)))
   return snap.exists() ? snap.data().valor : 1
 }
 
-export async function setCicloManualLoteMaq(lote, maquina, valor) {
-  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina))
+export async function setCicloManualLoteMaq(lote, maquina, valor, produto) {
+  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina, produto))
   const snap = await getDoc(ref)
   if (snap.exists()) {
     await updateDoc(ref, { valor: Number(valor) })
   } else {
-    await setDoc(ref, { lote, maquina, valor: Number(valor), atualizadoEm: serverTimestamp() })
+    await setDoc(ref, { lote, maquina, produto: produto || '', valor: Number(valor), atualizadoEm: serverTimestamp() })
   }
 }
 
@@ -176,11 +177,11 @@ export async function emitirCiclo({
   let ciclo = 1
   let lvFinal = String(lv || 'A').toUpperCase().slice(0, 1)
   if (isNilit) {
-    const next = await getNextCicloNilitLoteMaq(lote, maquina)
+    const next = await getNextCicloNilitLoteMaq(lote, maquina, produto)
     ciclo = next.ciclo
     lvFinal = next.lv
   } else {
-    ciclo = await getNextCicloLoteMaq(lote, maquina)
+    ciclo = await getNextCicloLoteMaq(lote, maquina, produto)
   }
 
   const totalMaqFusos = Math.max(1, parseInt(maquinaFusos) || 1)

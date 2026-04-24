@@ -53,20 +53,20 @@ export function ProducaoPage() {
   }, [])
 
   useEffect(() => {
-    if (form.lote && form.maquina) {
+    if (form.lote && form.maquina && form.produto) {
       if (isNilit) {
-        getProximoCicloNilitLoteMaq(form.lote, form.maquina).then(({ ciclo, lv }) => {
+        getProximoCicloNilitLoteMaq(form.lote, form.maquina, form.produto).then(({ ciclo, lv }) => {
           setCicloPreview(ciclo)
           setLvPreviewNilit(lv)
         })
       } else {
-        getCicloAtualLoteMaq(form.lote, form.maquina).then(setCicloPreview)
+        getCicloAtualLoteMaq(form.lote, form.maquina, form.produto).then(setCicloPreview)
       }
     } else {
       setCicloPreview(null)
       setLvPreviewNilit('A')
     }
-  }, [form.lote, form.maquina, isNilit])
+  }, [form.lote, form.maquina, form.produto, isNilit])
 
   function handleProdChange(cod) {
     const prod = produtos.find(p => p.cod === cod)
@@ -215,7 +215,7 @@ export function ProducaoPage() {
       }
 
       if (isNilit) {
-        const prox = await getProximoCicloNilitLoteMaq(form.lote, form.maquina)
+        const prox = await getProximoCicloNilitLoteMaq(form.lote, form.maquina, form.produto)
         setCicloPreview(prox.ciclo)
         setLvPreviewNilit(prox.lv)
       } else {
