@@ -147,8 +147,10 @@ export function ProducaoPage() {
           impressoraRede: configImpressora.impressoraRede,
         }
         setUltimoFormulario(dadosFormulario)
-        gerarEImprimirFormularios(dadosFormulario)
-        toast('Se o formulário não baixar, use "Reimprimir Formulário" ou libere múltiplos downloads para este site.', { icon: 'ℹ️' })
+        gerarEImprimirFormularios(dadosFormulario).catch(err =>
+          toast.error('Erro ao gerar PDF: ' + err.message)
+        )
+        toast('Gerando PDF do formulário…', { icon: '📄' })
       }
 
       if (isNilit) {
