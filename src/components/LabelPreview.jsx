@@ -100,8 +100,6 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   const {
     opacidade = '', maquina = '', lote = '', data = '',
-    emissaoHora = '', descricao = '', composicao = '',
-    operador = '', po = '', ciclo = 1, lv = 'A', fuso = 1,
   } = record || {}
 
   // Escala: ZPL 504×276 dots → preview 240×131px
