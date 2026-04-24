@@ -238,7 +238,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   // X direita — data e hora alinhadas à margem direita
   const W = 504 - 2 * mX
-  const xDate = 504 - mX - 10 * fDate.w                        // DD/MM/YYYY
+  const xDate = 504 - mX - 10 * fDate.w - 20                    // DD/MM/YYYY + Recuo manual
   const xTime = xDate + Math.floor((10 - 5) * fDate.w / 2)     // HH:MM centralizado
 
   const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
@@ -255,6 +255,12 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const bR = Number(L.barcodeRatio) || 3.0
 
+  let barcodeZPL = ''
+  // IMPRESSÃO TRIPLA DO BARCODE (Para máxima espessura e preenchimento)
+  for (let i = 0; i <= 2; i++) {
+    barcodeZPL += `^FO${mX + i},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS\n`
+  }
+
   return `^XA
 ^MMT
 ^PW504
@@ -269,7 +275,7 @@ ${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
 ${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
 ${renderField(mX, yL2, W, fL2, `${desc}  ${maqFull}  ${comp}  6200${op}`, 'L')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
-^FO${mX},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS
+${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
 ^PQ1,0,1,Y
 ^XZ`
