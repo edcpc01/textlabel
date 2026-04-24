@@ -243,6 +243,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const hora = emissaoHora || ''
   const desc = String(descricao || '').slice(0, 16)
   const comp = String(composicao || '').slice(0, 8)
+  const maqFull = String(maquina || '').slice(0, 8)
   const op = String(operador || '').slice(0, 4).padStart(4, '0')
   const cicloStr = String(ciclo)
   const fusoStr = String(fuso)
@@ -261,19 +262,18 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
     barcodeZPL += `^FO${mX + i},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS\n`
   }
 
-  // Campos alinhados à margem direita (data, hora e 6200xxxx)
-  const rightEdge = 504 - mX
-  const dateFieldW = 10 * fDate.w                    // largura para "DD/MM/YYYY"
-  const xDateR = rightEdge - dateFieldW              // alinhado à margem direita
-  const opCode = `6200${op}`
-  const opFieldW = opCode.length * fL2.w + 8        // largura para "6200XXXX" + folga
-  const xOpR = rightEdge - opFieldW
+  // Borda direita real do barcode (para alinhamento de data/hora/6200xxxx)
+  const barcodeRightEdge = mX + approxModules * bW + 2
 
-  // Linha 2 esquerda: maquina omitida (já está na linha 1 como FD04066)
-  // Truncagem explícita para garantir que não invade o campo direito
-  const leftW2 = xOpR - mX - 8
-  const maxL2Chars = Math.floor(leftW2 / fL2.w)
-  const leftLine2 = `${desc}  ${comp}`.slice(0, maxL2Chars)
+  const dateFieldW = 10 * fDate.w                    // largura para "DD/MM/YYYY"
+  const xDateR = barcodeRightEdge - dateFieldW       // alinhado à borda direita do barcode
+  const opCode = `6200${op}`
+  const opFieldW = opCode.length * fL2.w + 4        // largura para "6200XXXX"
+  const xOpR = barcodeRightEdge - opFieldW
+
+  // Linha 2 esquerda: inclui máquina (desc + maqFull + comp)
+  const leftLine2 = `${desc}  ${maqFull}  ${comp}`
+  const leftW2 = xOpR - mX - 4
 
   return `^XA
 ^MMT
@@ -284,7 +284,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-${renderField(mX, yCode, W - dateFieldW - 4, fCode, code1, 'L')}
+${renderField(mX, yCode, barcodeRightEdge - mX - dateFieldW - 4, fCode, code1, 'L')}
 ${renderField(xDateR, yCode, dateFieldW, fDate, dateFmt, 'R')}
 ${renderField(xDateR, yCode + fDate.h + 1, dateFieldW, fDate, hora, 'C')}
 ${renderField(mX, yL2, leftW2, fL2, leftLine2, 'L')}
