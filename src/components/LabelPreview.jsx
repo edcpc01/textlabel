@@ -84,15 +84,15 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       display: 'flex', flexDirection: 'column', gap: 1,
     }}>
       {/* L1 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: pD(15) }}>
         <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, textShadow: fCode.bold ? '1px 1px 0px black' : 'none' }}>{code1}</div>
-        <div style={{ textAlign: 'right' }}>
+        <div style={{ textAlign: 'center', minWidth: pD(120) }}>
           <div style={{ fontSize: fDate.size, fontWeight: 700 }}>{dataFmt}</div>
-          <div style={{ fontSize: fDate.size, fontWeight: 700, paddingRight: '15%' }}>{horaFmt}</div>
+          <div style={{ fontSize: fDate.size, fontWeight: 700 }}>{horaFmt}</div>
         </div>
       </div>
       {/* L2 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, paddingRight: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, paddingRight: pD(15) }}>
         <div style={{ fontSize: fL2.size, fontWeight: 700, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>{descFull}</div>
         <div style={{ fontSize: fL2.size, fontWeight: 700, textAlign: 'right' }}>{maqCode}</div>
       </div>

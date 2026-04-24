@@ -262,7 +262,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
     barcodeZPL += `^FO${mX + i},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS\n`
   }
 
-  const xDate = 504 - mX - 10 * fDate.w - 10
+  const xDate = 504 - mX - 10 * fDate.w - 15
   const wCode = xDate - mX - 5
 
   return `^XA
@@ -275,10 +275,10 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ~SD${dens}
 ^CI28
 ${renderField(mX, yCode, wCode, fCode, code1, 'L')}
-${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'R')}
+${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'C')}
 ${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
 ${renderField(mX, yL2, W - 180, fL2, `${desc} ${comp}`, 'L')}
-${renderField(504 - mX - 180 - 10, yL2, 180, fL2, `${maqFull} 6200${op}`, 'R')}
+${renderField(504 - mX - 180 - 15, yL2, 180, fL2, `${maqFull} 6200${op}`, 'R')}
 ${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
