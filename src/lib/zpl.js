@@ -33,7 +33,7 @@ function renderField(x, y, w, f, text, center = 'C') {
 
   let res = `^FO${x},${y}${fb}${cmd}^FD${text}^FS`
   if (f.bold) {
-    // SUPER NEGRITO 6X (Matriz 3x3 com salto de 2 dots para máxima espessura)
+    // SUPER NEGRITO 3X (Matriz 2x2 com salto de 2 dots para máxima espessura)
     for (let dx = 0; dx <= 4; dx += 2) {
       for (let dy = 0; dy <= 4; dy += 2) {
         if (dx === 0 && dy === 0) continue
