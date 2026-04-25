@@ -269,7 +269,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const fCode = parseFont(L.fontCode)
   const fDate = parseFont(L.fontDate)
-  const fOp   = parseFont(L.fontOp || '16,13')
+  const fOp   = fDate
   const fL2   = parseFont(L.fontL2)
   const fL3   = parseFont(L.fontL3)
   const fBc   = parseFont(L.fontBarcode)
@@ -283,9 +283,9 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const yOp   = yTime + fDate.h + 2
 
   // Linha 2 começa após o maior entre: fim do código e fim do bloco OP
-  const yL2      = Math.max(yCode + fCode.h, yOp + fOp.h) + 5
-  const yL3      = yL2 + fL2.h + 2          // espaçamento reduzido (era +4)
-  const yBarcode = yL3 + fL3.h + 6
+  const yL2      = Math.max(yCode + fCode.h, yOp + fOp.h) + 3
+  const yL3      = yL2 + fL2.h + 2
+  const yBarcode = yL3 + fL3.h + 4
   const yBcText  = yBarcode + bH + 4
 
   const W = 504 - 2 * mX

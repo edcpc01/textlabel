@@ -76,14 +76,14 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   const fCode = pfH(L.fontCode)
   const fDate = pfH(L.fontDate)
-  const fOp   = pfH(L.fontOp || '16,13')
+  const fOp   = fDate
   const fL2   = pfH(L.fontL2)
   const fL3   = pfH(L.fontL3)
   const fBc   = pfH(L.fontBarcode)
 
   return (
     <div style={{
-      width: 240, height: 131, background: '#fff', color: '#000',
+      width: 240, height: 145, background: '#fff', color: '#000',
       fontFamily: 'Arial, Helvetica, sans-serif', overflow: 'hidden', border: '1px solid #ccc',
       flexShrink: 0, boxSizing: 'border-box',
       padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,

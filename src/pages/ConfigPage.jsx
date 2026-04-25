@@ -312,8 +312,8 @@ export function ConfigPage() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <FontSlider label="Código (L1 — BK02111)" value={layoutNilit.fontCode} onChange={v => setLayoutNilitLocal(l => ({...l, fontCode: v}))} />
-                    <FontSlider label="Data / Hora (L1 direita)" value={layoutNilit.fontDate} onChange={v => setLayoutNilitLocal(l => ({...l, fontDate: v}))} />
-                    <FontSlider label="Linha 2 — Produto / Máq / Comp / Op" value={layoutNilit.fontL2} onChange={v => setLayoutNilitLocal(l => ({...l, fontL2: v}))} />
+                    <FontSlider label="Data / Hora / OP (L1 direita)" value={layoutNilit.fontDate} onChange={v => setLayoutNilitLocal(l => ({...l, fontDate: v}))} />
+                    <FontSlider label="Linha 2 — Produto / Máq / Comp" value={layoutNilit.fontL2} onChange={v => setLayoutNilitLocal(l => ({...l, fontL2: v}))} />
                     <FontSlider label="Linha 3 — PO / CG / LV / POS" value={layoutNilit.fontL3} onChange={v => setLayoutNilitLocal(l => ({...l, fontL3: v}))} />
                     <FontSlider label="Texto do Barcode" value={layoutNilit.fontBarcode} onChange={v => setLayoutNilitLocal(l => ({...l, fontBarcode: v}))} />
 
