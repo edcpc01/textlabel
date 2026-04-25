@@ -83,7 +83,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   return (
     <div style={{
-      width: 240, height: 145, background: '#fff', color: '#000',
+      width: 240, height: 150, background: '#fff', color: '#000',
       fontFamily: 'Arial, Helvetica, sans-serif', overflow: 'hidden', border: '1px solid #ccc',
       flexShrink: 0, boxSizing: 'border-box',
       padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,
@@ -99,17 +99,17 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
         </div>
       </div>
       {/* L2: desc + máquina (esq) | composição (dir) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 1, paddingRight: pD(15) }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: pD(15) }}>
         <div style={{ fontSize: fL2.size, fontWeight: 700, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>{descMaq}</div>
         <div style={{ fontSize: fL2.size, fontWeight: 700, textAlign: 'right', flexShrink: 0, marginLeft: 4 }}>{compFmt}</div>
       </div>
-      {/* L3 — espaçamento reduzido */}
-      <div style={{ fontSize: fL3.size, fontWeight: 700, marginTop: 1 }}>
+      {/* L3 */}
+      <div style={{ fontSize: fL3.size, fontWeight: 700 }}>
         PO:{r.po || '--'}  CG:{r.ciclo || 1}  LV:{r.lv || 'A'}  POS:{r.fuso || 1}/1
       </div>
       {/* Barcode */}
       <div style={{
-        height: pD(L.barcodeHeight || 60), margin: '2px 0', flexShrink: 0,
+        height: pD(L.barcodeHeight || 60), margin: '1px 0', flexShrink: 0,
         background: `repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px)`
       }} />
       <div style={{ fontSize: fBc.size, textAlign: 'center', fontFamily: 'monospace' }}>{r.barcode || 'B000000000'}</div>
