@@ -66,14 +66,20 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   // Dados com fallbacks seguros
   const r = record || {}
-  const code1 = `${String(r.opacidade||'').toUpperCase().slice(0,2).padEnd(2,' ')}${String(r.maquina||'').replace(/\D/g,'').slice(-2).padStart(2,'0')}${String(r.lote||'').replace(/\D/g,'').slice(0,3).padStart(3,'0')}`
+  const code1   = `${String(r.opacidade||'').toUpperCase().slice(0,2).padEnd(2,' ')}${String(r.maquina||'').replace(/\D/g,'').slice(-2).padStart(2,'0')}${String(r.lote||'').replace(/\D/g,'').slice(0,3).padStart(3,'0')}`
   const dataFmt = r.data ? r.data.split('-').reverse().join('/') : '--/--/--'
   const horaFmt = r.emissaoHora || '--:--'
-  const descFull = `${String(r.descricao||'').slice(0,22)} ${String(r.composicao||'').slice(0,8)}`
-  const maqCode = `${String(r.maquina||'').slice(0,8)} 6200${String(r.operador || r.op || '0001').slice(0,4).padStart(4,'0')}`
-  
-  const fCode = pfH(L.fontCode); const fDate = pfH(L.fontDate)
-  const fL2 = pfH(L.fontL2); const fL3 = pfH(L.fontL3); const fBc = pfH(L.fontBarcode)
+  const opCode  = `6200${String(r.operador || r.op || '0001').slice(0,4).padStart(4,'0')}`
+  // L2: descrição + máquina (esq) | composição (dir)
+  const descMaq = `${String(r.descricao||'').slice(0,22)} ${String(r.maquina||'').slice(0,8)}`
+  const compFmt = String(r.composicao||'').slice(0,8)
+
+  const fCode = pfH(L.fontCode)
+  const fDate = pfH(L.fontDate)
+  const fOp   = pfH(L.fontOp || '16,13')
+  const fL2   = pfH(L.fontL2)
+  const fL3   = pfH(L.fontL3)
+  const fBc   = pfH(L.fontBarcode)
 
   return (
     <div style={{
@@ -83,21 +89,22 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
       padding: `${pD(L.margemTop)}px ${pD(L.margemX)}px ${pD(L.margemX)}px`,
       display: 'flex', flexDirection: 'column', gap: 1,
     }}>
-      {/* L1 */}
+      {/* L1: código | data + hora + operador */}
       <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: pD(15) }}>
         <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, textShadow: fCode.bold ? '1px 1px 0px black' : 'none' }}>{code1}</div>
         <div style={{ textAlign: 'center', minWidth: pD(120) }}>
           <div style={{ fontSize: fDate.size, fontWeight: 700 }}>{dataFmt}</div>
           <div style={{ fontSize: fDate.size, fontWeight: 700 }}>{horaFmt}</div>
+          <div style={{ fontSize: fOp.size,  fontWeight: 700 }}>{opCode}</div>
         </div>
       </div>
-      {/* L2 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, paddingRight: pD(15) }}>
-        <div style={{ fontSize: fL2.size, fontWeight: 700, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>{descFull}</div>
-        <div style={{ fontSize: fL2.size, fontWeight: 700, textAlign: 'right' }}>{maqCode}</div>
+      {/* L2: desc + máquina (esq) | composição (dir) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 1, paddingRight: pD(15) }}>
+        <div style={{ fontSize: fL2.size, fontWeight: 700, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>{descMaq}</div>
+        <div style={{ fontSize: fL2.size, fontWeight: 700, textAlign: 'right', flexShrink: 0, marginLeft: 4 }}>{compFmt}</div>
       </div>
-      {/* L3 */}
-      <div style={{ fontSize: fL3.size, fontWeight: 700, marginTop: 2 }}>
+      {/* L3 — espaçamento reduzido */}
+      <div style={{ fontSize: fL3.size, fontWeight: 700, marginTop: 1 }}>
         PO:{r.po || '--'}  CG:{r.ciclo || 1}  LV:{r.lv || 'A'}  POS:{r.fuso || 1}/1
       </div>
       {/* Barcode */}

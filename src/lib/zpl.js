@@ -236,16 +236,17 @@ export async function printZPL(content, filename) {
 // Width: 504 dots | Height: 276 dots
 
 export const LAYOUT_NILIT_DEFAULT = {
-  fontCode: '44,38',  // Linha 1 — código (BK02111)
-  fontDate: '22,18',  // Linha 1 — data e hora (direita)
-  fontL2: '20,14',  // Linha 2 — produto / máquina / comp / operador
-  fontL3: '20,14',  // Linha 3 — PO / CG / LV / POS
+  fontCode:    '44,38',  // Linha 1 esq — código (FD04066)
+  fontDate:    '22,18',  // Linha 1 dir — data e hora
+  fontOp:      '16,13',  // Linha 1 dir — operador 6200xxxx (bloco data)
+  fontL2:      '20,14',  // Linha 2 — descrição / máquina / composição
+  fontL3:      '20,14',  // Linha 3 — PO / CG / LV / POS
   fontBarcode: '20,16',  // Texto abaixo do barcode
-  barcodeHeight: 100,      // Altura do barcode em dots
-  barcodeModule: 3,        // Largura do módulo (BY — 1 a 4 dots)
-  barcodeRatio: 3.0,      // Proporção barras largas/finas (2.0 a 3.0)
+  barcodeHeight: 100,
+  barcodeModule: 3,
+  barcodeRatio:  3.0,
   margemTop: 8,
-  margemX: 8,
+  margemX:   8,
 }
 
 function maqNums2(maquinaCod) {
@@ -268,50 +269,59 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const fCode = parseFont(L.fontCode)
   const fDate = parseFont(L.fontDate)
-  const fL2 = parseFont(L.fontL2)
-  const fL3 = parseFont(L.fontL3)
-  const fBc = parseFont(L.fontBarcode)
+  const fOp   = parseFont(L.fontOp || '16,13')
+  const fL2   = parseFont(L.fontL2)
+  const fL3   = parseFont(L.fontL3)
+  const fBc   = parseFont(L.fontBarcode)
   const mT = Number(L.margemTop) || 8
   const mX = Number(L.margemX) || 8
   const bH = Number(L.barcodeHeight) || 100
 
-  // Y dinâmico baseado no layout
+  // ── Bloco direito: data + hora + operador empilhados
   const yCode = mT
-  const ySep = mT + fCode.h + 3
-  const yL2 = ySep + 5
-  const yL3 = yL2 + fL2.h + 4
-  const yBarcode = yL3 + fL3.h + 8
-  const yBcText = yBarcode + bH + 4
+  const yTime = yCode + fDate.h + 2
+  const yOp   = yTime + fDate.h + 2
+
+  // Linha 2 começa após o maior entre: fim do código e fim do bloco OP
+  const yL2      = Math.max(yCode + fCode.h, yOp + fOp.h) + 5
+  const yL3      = yL2 + fL2.h + 2          // espaçamento reduzido (era +4)
+  const yBarcode = yL3 + fL3.h + 6
+  const yBcText  = yBarcode + bH + 4
 
   const W = 504 - 2 * mX
 
   const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
-  const code1 = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
+  const code1   = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
   const dateFmt = data ? data.split('-').reverse().join('/') : ''
-  const hora = emissaoHora || ''
-  const desc = String(descricao || '').slice(0, 22)
-  const comp = String(composicao || '').slice(0, 8)
+  const hora    = emissaoHora || ''
+  const desc    = String(descricao || '').slice(0, 22)
+  const comp    = String(composicao || '').slice(0, 8)
   const maqFull = String(maquina || '').slice(0, 8)
-  const op = String(operador || '').slice(0, 4).padStart(4, '0')
+  const op      = String(operador || '').slice(0, 4).padStart(4, '0')
+  const opCode  = `6200${op}`
   const cicloStr = String(ciclo)
-  const fusoStr = String(fuso)
-  const lvStr = String(lv || 'A').toUpperCase().slice(0, 1)
+  const fusoStr  = String(fuso)
+  const lvStr    = String(lv || 'A').toUpperCase().slice(0, 1)
 
   const bR = Number(L.barcodeRatio) || 3.0
 
-  // Calcula bW máximo que cabe sem overflow (Code 128: ~35+11*N módulos)
-  // Ignora o valor configurado pois o Firebase pode guardar um valor antigo pequeno
   const approxModules = 35 + 11 * String(barcode).length
   const bW = Math.max(1, Math.floor((504 - 2 * mX - 2) / approxModules))
 
   let barcodeZPL = ''
-  // IMPRESSÃO TRIPLA DO BARCODE (Para máxima espessura)
   for (let i = 0; i <= 2; i++) {
     barcodeZPL += `^FO${mX + i},${yBarcode}^BY${bW},${bR},${bH}^BCN,${bH},N,N^FD${barcode}^FS\n`
   }
 
-  const xDate = 504 - mX - 10 * fDate.w - 15
-  const wCode = xDate - mX - 5
+  // Bloco direito (data + hora + op): largura = 10 × fDate.w
+  const wRight = 10 * fDate.w
+  const xDate  = 504 - mX - wRight - 15
+  const wCode  = xDate - mX - 5
+
+  // Linha 2: esq = desc + máquina | dir = composição (130 dots)
+  const wL2r = 130
+  const wL2l = W - wL2r
+  const xL2r = mX + wL2l
 
   return `^XA
 ^MMT
@@ -322,12 +332,13 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 ^PR${vel},${vel}
 ~SD${dens}
 ^CI28
-${renderField(mX, yCode, wCode, fCode, code1, 'L')}
-${renderField(xDate, yCode, 10 * fDate.w, fDate, dateFmt, 'C')}
-${renderField(xDate, yCode + fDate.h + 1, 10 * fDate.w, fDate, hora, 'C')}
-${renderField(mX, yL2, W - 180, fL2, `${desc} ${comp}`, 'L')}
-${renderField(504 - mX - 180 - 15, yL2, 180, fL2, `${maqFull} 6200${op}`, 'R')}
-${renderField(mX, yL3, W, fL3, `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
+${renderField(mX,    yCode, wCode,  fCode, code1,   'L')}
+${renderField(xDate, yCode, wRight, fDate, dateFmt, 'C')}
+${renderField(xDate, yTime, wRight, fDate, hora,    'C')}
+${renderField(xDate, yOp,   wRight, fOp,  opCode,  'C')}
+${renderField(mX,    yL2,   wL2l,   fL2,  `${desc} ${maqFull}`, 'L')}
+${renderField(xL2r,  yL2,   wL2r,   fL2,  comp,    'R')}
+${renderField(mX,    yL3,   W,      fL3,  `PO:${po}  CG:${cicloStr}  LV:${lvStr}  POS:${fusoStr}/1`, 'L')}
 ${barcodeZPL}
 ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
 ^PQ1,0,1,Y
