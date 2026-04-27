@@ -135,7 +135,7 @@ export async function gerarEImprimirFormularios(dados) {
   <div class="f1">
     <div class="titulo">
       <h1>Texturizadora</h1>
-      <h2>Etiqueta de Ciclo de Produção</h2>
+      <h2>Placa de Ciclo de Produção</h2>
     </div>
     <div class="grid2">
       <div class="campo"><label>Material</label><div class="v">${emp}</div></div>
