@@ -91,9 +91,13 @@ export async function gerarEImprimirFormularios(dados) {
     .cel-def:nth-child(4n) { border-right:none; }
     .cat.ultima .cel-def:nth-child(n+13) { border-bottom:none; }
     .instrucao { display:flex; align-items:center; justify-content:center; text-align:center; font-size:9pt; font-weight:700; padding:4mm; line-height:1.6; background:#f5f5f5; }
-    .tab-rod { width:100%; border-collapse:collapse; margin-top:4mm; }
-    .tab-rod th { border:1px solid #000; padding:2.5mm 3mm; font-size:9pt; font-weight:700; background:#fafafa; text-align:center; }
-    .tab-rod td { border:1px solid #000; padding:2.5mm 3mm; font-size:10pt; font-weight:700; min-height:11mm; vertical-align:middle; }
+    .grade-footer { border:1.5px solid #000; margin-top:2mm; display:flex; flex-direction:column; }
+    .gf-row { display:flex; border-bottom:1.5px solid #000; }
+    .gf-row.ultima { border-bottom:none; }
+    .gf-cell { border-right:1.5px solid #000; padding:2mm 3mm; height:11mm; display:flex; align-items:center; font-weight:700; font-size:10pt; flex:1; }
+    .gf-cell:last-child { border-right:none; }
+    .gf-row.head { background:#fafafa; height:auto; }
+    .gf-row.head .gf-cell { justify-content:center; font-size:9pt; height:auto; padding:1.5mm; text-transform:uppercase; }
     .rod-info { margin-top:4mm; font-size:7.5pt; font-style:italic; color:#666; }
 
     /* ── FORMULÁRIO 2 (CLASSIFICAÇÃO) ── */
@@ -189,6 +193,28 @@ export async function gerarEImprimirFormularios(dados) {
 <div class="page verso">
   <div class="f1" style="gap:0;padding:6mm 14mm 4mm 14mm;">
     <div class="titulo-verso">Defeitos de Escolha Visual</div>
+    
+    <div class="grade-footer" style="margin-bottom: 4mm;">
+      <div class="gf-row head">
+        <div class="gf-cell" style="flex: 0 0 28mm;">&nbsp;</div>
+        <div class="gf-cell" style="flex: 0 0 38mm;">Data</div>
+        <div class="gf-cell" style="flex: 0 0 42mm;">Turma</div>
+        <div class="gf-cell">Responsável</div>
+      </div>
+      <div class="gf-row">
+        <div class="gf-cell" style="flex: 0 0 28mm;">Batocagem</div>
+        <div class="gf-cell" style="flex: 0 0 38mm;">&nbsp;</div>
+        <div class="gf-cell" style="flex: 0 0 42mm;">&nbsp;</div>
+        <div class="gf-cell">&nbsp;</div>
+      </div>
+      <div class="gf-row ultima">
+        <div class="gf-cell" style="flex: 0 0 28mm;">Escolha</div>
+        <div class="gf-cell" style="flex: 0 0 38mm;">&nbsp;</div>
+        <div class="gf-cell" style="flex: 0 0 42mm;">&nbsp;</div>
+        <div class="gf-cell">&nbsp;</div>
+      </div>
+    </div>
+
     <div class="grade">
       ${defeitos.map(nome => `
         <div class="cat">
@@ -203,16 +229,8 @@ export async function gerarEImprimirFormularios(dados) {
         <div class="instrucao">MARCAR NOS CAMPOS<br>NÚMERO DA BOBINA<br>COM DEFEITO.</div>
       </div>
     </div>
-    <table class="tab-rod">
-      <thead>
-        <tr><th style="width:28mm;"></th><th style="width:38mm;">Data</th><th style="width:42mm;">Turma</th><th>Responsável</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Batocagem</td><td></td><td></td><td></td></tr>
-        <tr><td>Escolha</td><td></td><td></td><td></td></tr>
-      </tbody>
-    </table>
 
+    <div class="rod-info">Qualidade\\padronização\\tietê\\formulários\\FO 02 038- Defeitos de Escolha Visual (folha verso)</div>
   </div>
 </div>
 
