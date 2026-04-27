@@ -313,6 +313,15 @@ tbody tr:hover td { background: rgba(0,212,255,.03); }
 .badge-red    { background: rgba(255,68,102,.15); color: var(--red); }
 .badge-gray   { background: rgba(90,122,154,.15); color: var(--text2); }
 
+.btn-fuso { transition: all 0.2s ease; }
+.btn-fuso:hover {
+  background: var(--accent) !important;
+  color: #000 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+}
+.btn-fuso:active { transform: translateY(0); }
+
 /* ─── CICLO DESTACADO ─── */
 .ciclo-banner {
   background: var(--card);

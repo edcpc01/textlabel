@@ -111,6 +111,39 @@ export function RelatorioPage() {
     }
   }
 
+  async function reimprimirFuso(e, fusoNum) {
+    const isNilit = (e.empresa || '').toLowerCase().includes('nilit')
+    const fusoStr = String(fusoNum).padStart(2, '0')
+    if (!confirm(`Reimprimir etiqueta do fuso F${fusoStr}?`)) return
+
+    try {
+      const etiquetas = await getEtiquetasPorEmissao(e.id)
+      const eti = etiquetas.find(x => Number(x.fuso) === fusoNum)
+      
+      const labelEntries = [{ ...e, ...eti, ciclo: e.ciclo, fuso: fusoNum }]
+      
+      let zpl, filename = `C${String(e.ciclo).padStart(3,'0')}_F${fusoStr}_${e.maquina}.zpl`
+      
+      if (isNilit) {
+        const [configNilit, layoutNilit] = await Promise.all([getImpressoraNilit(), getLayoutNilit()])
+        const barcodes = [eti?.barcode || 'B000000000']
+        zpl = buildZPLNilitCiclo({ ...e, lv: e.lv || 'A' }, {
+          vel: configNilit.vel ?? 3, dens: configNilit.dens ?? 15, offx: configNilit.offx ?? 0,
+        }, barcodes, 1, layoutNilit, labelEntries)
+      } else {
+        const [empresa, layout] = await Promise.all([getEmpresa(), getLayout()])
+        zpl = buildZPLCiclo({ ...e, ciclo: e.ciclo }, {
+          vel: empresa.vel ?? 3, dens: empresa.dens ?? 15, offx: empresa.offx ?? -24,
+        }, 1, layout, labelEntries)
+      }
+
+      await printZPL(zpl, filename)
+      toast.success(`Etiqueta F${fusoStr} enviada para impressão!`)
+    } catch (err) {
+      toast.error('Erro ao reimprimir fuso: ' + (err?.message || err))
+    }
+  }
+
   function toggleExpand(id) { setExpanded(p => ({ ...p, [id]: !p[id] })) }
 
   return (
@@ -262,9 +295,15 @@ export function RelatorioPage() {
                       <td colSpan="10" style={{ background: 'var(--surface)', padding: '12px 24px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {Array.from({ length: e.totalFusos }, (_, i) => i + 1).map(f => (
-                            <span key={f} className="badge badge-gray" style={{ minWidth: 36, justifyContent: 'center' }}>
+                            <button
+                              key={f}
+                              className="badge badge-gray btn-fuso"
+                              style={{ minWidth: 36, justifyContent: 'center', cursor: 'pointer', border: 'none' }}
+                              onClick={() => reimprimirFuso(e, f)}
+                              title={`Clique para reimprimir apenas o fuso ${f}`}
+                            >
                               F{f}
-                            </span>
+                            </button>
                           ))}
                         </div>
                         <div style={{ marginTop: 8, fontSize: '.72rem', color: 'var(--muted)' }}>
