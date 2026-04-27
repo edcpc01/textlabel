@@ -4,86 +4,62 @@
 <meta charset="UTF-8">
 <title>Classificação Visual de Afinidade Tintorial</title>
 <style>
-  @page { size:A4 portrait; margin:3mm 5mm; }
+  @page { size:A4 portrait; margin:8mm 10mm; }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Arial Narrow',Arial,sans-serif; background:#f0f0f0;
          display:flex; flex-direction:column; align-items:center; padding:20px; gap:20px; }
-
-  .page { background:#fff; padding:3mm 5mm;
+  .page { background:#fff; padding:6mm 8mm;
            box-shadow:0 2px 12px rgba(0,0,0,.15);
-           display:flex; flex-direction:column; gap:1.2mm; width:210mm; }
+           display:flex; flex-direction:column; gap:2.5mm; width:210mm; }
 
-  /* CABEÇALHO — ultra compacto */
-  .cab { display:flex; align-items:center; border-bottom:2px solid #000;
-          padding-bottom:1mm; gap:3mm; }
-  .logo-doptex { height:7mm; width:auto; }
-  .titulo-form { font-size:9pt; font-weight:900; text-transform:uppercase;
-                  text-align:center; flex:1; letter-spacing:.2px; }
+  /* CABEÇALHO */
+  .cab { display:flex; align-items:center; border-bottom:2.5px solid #000;
+          padding-bottom:2mm; gap:5mm; }
+  .logo-doptex { height:13mm; width:auto; }
+  .titulo-form { font-size:13pt; font-weight:900; text-transform:uppercase;
+                  text-align:center; flex:1; letter-spacing:.3px; }
 
-  /* DADOS — uma linha só */
+  /* DADOS */
   .dados-box { display:grid; gap:0; border:1px solid #000; }
   .dl1 { grid-template-columns:1fr 2fr 1fr 1fr; }
-  .dl2 { grid-template-columns:1fr 1fr; border-top:none; margin-top:-1px; }
-  .cel { border-right:1px solid #000; padding:.5mm 2mm; display:flex; flex-direction:column; }
+  .dl2 { grid-template-columns:1fr 1fr; border:1px solid #000; margin-top:2mm; }
+  .cel { border-right:1px solid #000; padding:1.5mm 2.5mm; display:flex; flex-direction:column; }
   .cel:last-child { border-right:none; }
-  .cel label { font-size:5pt; font-weight:700; color:#444; }
-  .cel .v { font-size:7.5pt; font-weight:700; min-height:3.5mm; }
-  .cel .v.lg { font-size:9pt; }
+  .cel label { font-size:7pt; font-weight:700; color:#444; margin-bottom:.4mm; }
+  .cel .v { font-size:11pt; font-weight:700; min-height:6mm; }
+  .cel .v.lg { font-size:12pt; }
 
-  /* FUSOS — 48 linhas × 2 cols numa A4 */
-  .tabela-fusos { display:grid; grid-template-columns:1fr 1fr; gap:2mm; flex:1; }
+  /* FUSOS — 36 linhas por coluna, espaçosas */
+  .tabela-fusos { display:grid; grid-template-columns:1fr 1fr; gap:3mm; flex:1; }
   table.fusos { width:100%; border-collapse:collapse; }
-  table.fusos th { background:#222; color:#fff; padding:.8mm 1.5mm; text-align:center;
-                    border:1px solid #000; font-size:7pt; font-weight:700; }
-  table.fusos td { border:1px solid #000; padding:0 1.5mm; height:4.6mm;
-                    text-align:center; vertical-align:middle; font-size:7.5pt; }
-  table.fusos td:first-child { font-weight:700; background:#f5f5f5; width:11mm; }
+  table.fusos th { background:#222; color:#fff; padding:2mm 2.5mm; text-align:center;
+                    border:1px solid #000; font-size:9pt; font-weight:700; }
+  table.fusos td { border:1px solid #000; padding:0 2.5mm; height:6.8mm;
+                    text-align:center; vertical-align:middle; font-size:9pt; }
+  table.fusos td:first-child { font-weight:700; background:#f5f5f5; width:13mm; }
   table.fusos tr.inativo td { background:#f0f0f0; color:#ccc; }
 
   /* RODAPÉ */
-  .rodape { display:grid; grid-template-columns:40px 44px 1fr 1fr 1fr 1fr; gap:0; border:1px solid #000; }
-  .rd { border-right:1px solid #000; padding:1mm 1.5mm; }
+  .rodape { display:grid; grid-template-columns:50px 55px 1fr 1fr 1fr 1fr; gap:0; border:1px solid #000; }
+  .rd { border-right:1px solid #000; padding:1.5mm 2mm; }
   .rd:last-child { border-right:none; }
-  .rd label { font-size:5.5pt; font-weight:700; display:block; text-transform:uppercase; }
-  .rd .resp { font-size:6pt; min-height:5.5mm; }
-  .rd .dl { font-size:5.5pt; color:#555; border-top:1px solid #ccc; padding-top:.3mm; margin-top:.3mm; }
+  .rd label { font-size:7pt; font-weight:700; display:block; text-transform:uppercase; }
+  .rd .resp { font-size:7.5pt; min-height:7mm; }
+  .rd .dl { font-size:7pt; color:#555; border-top:1px solid #ccc; padding-top:.5mm; margin-top:.5mm; }
 
   /* DIRECIONAMENTO */
-  .dir { border:1px solid #000; padding:1mm 2mm; }
-  .dir .dh { display:flex; gap:8mm; font-size:7pt; font-weight:700; margin-bottom:1mm; }
-  .obs { border-bottom:1px solid #ccc; height:4mm; }
-
-  /* VERSO DEFEITOS */
-  .titulo-verso { text-align:center; font-size:16pt; font-weight:900;
-                   text-transform:uppercase; margin-bottom:4mm; }
-  .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
-  .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
-  .cat:nth-child(4n) { border-right:none; }
-  .cat.ultima { border-bottom:none; }
-  .cat-tit { font-size:8pt; font-weight:700; text-transform:uppercase; text-align:center;
-              padding:2mm; border-bottom:1px solid #000; background:#fafafa; }
-  .celulas { display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
-  .cel-def { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:9mm; }
-  .cel-def:nth-child(4n) { border-right:none; }
-  .instrucao { display:flex; align-items:center; justify-content:center; text-align:center;
-                font-size:9pt; font-weight:700; padding:4mm; line-height:1.6; background:#f5f5f5; }
-  .tab-rod { width:100%; border-collapse:collapse; margin-top:5mm; }
-  .tab-rod th { border:1px solid #000; padding:2.5mm 3mm; font-size:9pt; font-weight:700;
-                 background:#fafafa; text-align:center; }
-  .tab-rod td { border:1px solid #000; padding:2.5mm 3mm; font-size:10pt; font-weight:700;
-                 min-height:11mm; vertical-align:middle; }
-  .rod-info { margin-top:4mm; font-size:7.5pt; font-style:italic; color:#666; }
+  .dir { border:1px solid #000; padding:1.5mm 2.5mm; }
+  .dir .dh { display:flex; gap:10mm; font-size:8.5pt; font-weight:700; margin-bottom:1.5mm; }
+  .obs { border-bottom:1px solid #ccc; height:5.5mm; }
 
   @media print {
     body { background:none; padding:0; gap:0; }
-    .page { box-shadow:none; page-break-after:always; }
-    .page:last-child { page-break-after:auto; }
+    .page { box-shadow:none; }
   }
 </style>
 </head>
 <body>
 
-<!-- ══ PÁG 1: CLASSIFICAÇÃO VISUAL — 1 FOLHA A4 ══ -->
 <div class="page">
 
   <div class="cab">
@@ -102,6 +78,7 @@
     <div class="cel"><label>Obs.</label><div class="v">&nbsp;</div></div>
   </div>
 
+  <!-- 72 fusos: col1=1-36, col2=37-72 -->
   <div class="tabela-fusos">
     <table class="fusos">
       <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
@@ -140,8 +117,11 @@
 <tr class="ativo" data-fuso="33"><td>33</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="34"><td>34</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="35"><td>35</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="36"><td>36</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="37"><td>37</td><td></td><td></td></tr>
+<tr class="ativo" data-fuso="36"><td>36</td><td></td><td></td></tr></tbody>
+    </table>
+    <table class="fusos">
+      <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
+      <tbody><tr class="ativo" data-fuso="37"><td>37</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="38"><td>38</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="39"><td>39</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="40"><td>40</td><td></td><td></td></tr>
@@ -152,11 +132,8 @@
 <tr class="ativo" data-fuso="45"><td>45</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="46"><td>46</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="47"><td>47</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="48"><td>48</td><td></td><td></td></tr></tbody>
-    </table>
-    <table class="fusos">
-      <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
-      <tbody><tr class="ativo" data-fuso="49"><td>49</td><td></td><td></td></tr>
+<tr class="ativo" data-fuso="48"><td>48</td><td></td><td></td></tr>
+<tr class="ativo" data-fuso="49"><td>49</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="50"><td>50</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="51"><td>51</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="52"><td>52</td><td></td><td></td></tr>
@@ -179,31 +156,7 @@
 <tr class="ativo" data-fuso="69"><td>69</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="70"><td>70</td><td></td><td></td></tr>
 <tr class="ativo" data-fuso="71"><td>71</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="72"><td>72</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="73"><td>73</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="74"><td>74</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="75"><td>75</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="76"><td>76</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="77"><td>77</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="78"><td>78</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="79"><td>79</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="80"><td>80</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="81"><td>81</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="82"><td>82</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="83"><td>83</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="84"><td>84</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="85"><td>85</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="86"><td>86</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="87"><td>87</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="88"><td>88</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="89"><td>89</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="90"><td>90</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="91"><td>91</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="92"><td>92</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="93"><td>93</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="94"><td>94</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="95"><td>95</td><td></td><td></td></tr>
-<tr class="ativo" data-fuso="96"><td>96</td><td></td><td></td></tr></tbody>
+<tr class="ativo" data-fuso="72"><td>72</td><td></td><td></td></tr></tbody>
     </table>
   </div>
 
@@ -226,27 +179,5 @@
   </div>
 
 </div>
-
-<!-- ══ PÁG 2: VERSO — DEFEITOS DE ESCOLHA VISUAL ══ -->
-<div class="page">
-  <div class="titulo-verso">Defeitos de Escolha Visual</div>
-  <div class="grade"><div class="cat"><div class="cat-tit">Bobinas com Pêlo</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Bobinas Suja</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Tubete Amassado</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat" style="border-right:none;"><div class="cat-tit">Sem Entrelaçamento</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Defeito de Enrolamento</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Torção Errada</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Tubete Errado</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat" style="border-right:none;"><div class="cat-tit">Fio Trançado</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Bobinas com 01 Cabo</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Bobinas sem Reserva</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat"><div class="cat-tit">Bobinas com TMT</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat" style="border-right:none;"><div class="cat-tit">Fio Podre</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat ultima"><div class="cat-tit">Bobinas com Anel</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat ultima"><div class="cat-tit">Bobinas Batidas</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat ultima"><div class="cat-tit">&nbsp;</div><div class="celulas"><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div><div class="cel-def"></div></div></div><div class="cat ultima" style="border-right:none;"><div class="instrucao">MARCAR NOS CAMPOS<br>NÚMERO DA BOBINA<br>COM DEFEITO.</div></div></div>
-  <table class="tab-rod">
-    <thead>
-      <tr>
-        <th style="width:28mm;"></th>
-        <th style="width:38mm;">Data</th>
-        <th style="width:42mm;">Turma</th>
-        <th>Responsável</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td>Batocagem</td><td></td><td></td><td></td></tr>
-      <tr><td>Escolha</td><td></td><td></td><td></td></tr>
-    </tbody>
-  </table>
-  <div class="rod-info">Qualidade\padronização\tietê\formulários\FO 02 038- Defeitos de Escolha Visual (folha verso)</div>
-</div>
-
 </body>
 </html>
