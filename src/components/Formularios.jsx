@@ -80,7 +80,7 @@ export async function gerarEImprimirFormularios(dados) {
 
     /* ── VERSO (DEFEITOS) ── */
     .verso { margin-top:0; }
-    .titulo-verso { text-align:center; font-size:16pt; font-weight:900; text-transform:uppercase; margin-bottom:4mm; }
+    .titulo-verso { text-align:center; font-size:16pt; font-weight:900; text-transform:uppercase; margin-bottom:2mm; }
     .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; overflow:hidden; }
     .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
     .cat:nth-child(4n) { border-right:none; }
@@ -186,7 +186,7 @@ export async function gerarEImprimirFormularios(dados) {
 
 <!-- PAGINA 2: FORMULARIO 1 — VERSO (DEFEITOS DE ESCOLHA VISUAL) -->
 <div class="page verso">
-  <div class="f1" style="gap:0;padding:12mm 14mm;">
+  <div class="f1" style="gap:0;padding:6mm 14mm 4mm 14mm;">
     <div class="titulo-verso">Defeitos de Escolha Visual</div>
     <div class="grade">
       ${defeitos.map(nome => `
