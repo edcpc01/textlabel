@@ -211,7 +211,7 @@ export async function gerarEImprimirFormularios(dados) {
         <tr><td>Escolha</td><td></td><td></td><td></td></tr>
       </tbody>
     </table>
-    <div class="rod-info">Qualidade\\padronização\\tietê\\formulários\\FO 02 038- Defeitos de Escolha Visual (folha verso)</div>
+
   </div>
 </div>
 
