@@ -66,7 +66,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   // Dados com fallbacks seguros
   const r = record || {}
-  const code1   = `${String(r.opacidade||'').toUpperCase().slice(0,2).padEnd(2,' ')}${String(r.maquina||'').replace(/\D/g,'').slice(-2).padStart(2,'0')}${String(r.lote||'').replace(/\D/g,'').slice(0,3).padStart(3,'0')}`
+  const code1   = `${String(r.opacidade||'').toUpperCase().slice(0,2).padEnd(2,' ')}0${String(r.lote||'').replace(/\D/g,'').slice(0,4).padStart(4,'0')}`
   const dataFmt = r.data ? r.data.split('-').reverse().join('/') : '--/--/--'
   const horaFmt = r.emissaoHora || '--:--'
   const opCode  = `6200${String(r.operador || r.op || '0001').slice(0,4).padStart(4,'0')}`

@@ -249,12 +249,8 @@ export const LAYOUT_NILIT_DEFAULT = {
   margemX:   8,
 }
 
-function maqNums2(maquinaCod) {
-  return String(maquinaCod || '').replace(/\D/g, '').slice(-2).padStart(2, '0')
-}
-
-function lote3d(loteStr) {
-  return String(loteStr || '').replace(/\D/g, '').slice(0, 3).padStart(3, '0')
+function lote4d(loteStr) {
+  return String(loteStr || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0')
 }
 
 export function buildZPLNilit(record, config = {}, layout = {}) {
@@ -291,7 +287,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const W = 504 - 2 * mX
 
   const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
-  const code1   = `${opacity2}${maqNums2(maquina)}${lote3d(lote)}`
+  const code1   = `${opacity2}0${lote4d(lote)}`
   const dateFmt = data ? data.split('-').reverse().join('/') : ''
   const hora    = emissaoHora || ''
   const desc    = String(descricao || '').slice(0, 22)

@@ -294,7 +294,7 @@ export async function gerarEImprimirFormularios(dados) {
     }
 
     const timestamp = Date.now()
-    const sfx = imp ? `__${imp.replace(/[^a-zA-Z0-9\-_]/g, '_')}` : ''
+    const sfx = imp ? `__${imp.replace(/[<>:"/\\|?*]/g, '_')}` : ''
     const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}${sfx}.pdf`
     pdf.save(filename)
   } finally {

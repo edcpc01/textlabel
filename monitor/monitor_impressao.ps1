@@ -94,6 +94,39 @@ Write-Host "Aguardando PDFs TextLabel (F*.pdf)..." -ForegroundColor Green
 Write-Host "Pressione Ctrl+C para encerrar." -ForegroundColor DarkGray
 Write-Host ""
 
+# --- Funcoes auxiliares ---
+function Get-ImpressorasInstaladas {
+    try {
+        return @(Get-Printer -ErrorAction Stop | Select-Object -ExpandProperty Name)
+    } catch {
+        return @()
+    }
+}
+
+function Resolve-NomeImpressora {
+    param([string]$NomeArquivo, [string[]]$Disponiveis)
+    if (-not $NomeArquivo) { return $null }
+    # Match exato (case-insensitive)
+    foreach ($p in $Disponiveis) {
+        if ($p -ieq $NomeArquivo) { return $p }
+    }
+    # Match aproximado: trata "_" do nome do arquivo como wildcard (resolve ê → _ etc.)
+    $pattern = '^' + ([regex]::Escape($NomeArquivo) -replace '_', '.') + '$'
+    foreach ($p in $Disponiveis) {
+        if ($p -match $pattern) { return $p }
+    }
+    return $null
+}
+
+function Get-ImpressoraDoArquivo {
+    param([string]$NomeArquivo)
+    # Padrao: F<x>_<y>_<z>_<ts>__<NomeImpressora>.pdf
+    if ($NomeArquivo -match '^F.+__(.+)\.pdf$') {
+        return $matches[1]
+    }
+    return $null
+}
+
 # --- Inicializa lista de arquivos ja existentes (nao reimprimir) ---
 $jaProcessados = @{}
 Get-ChildItem -Path $Pasta -Filter "F*.pdf" -ErrorAction SilentlyContinue | ForEach-Object {
@@ -103,6 +136,7 @@ Get-ChildItem -Path $Pasta -Filter "F*.pdf" -ErrorAction SilentlyContinue | ForE
 # --- Loop de monitoramento (polling a cada 3 segundos) ---
 while ($true) {
     $arquivos = Get-ChildItem -Path $Pasta -Filter "F*.pdf" -ErrorAction SilentlyContinue
+    $impressorasOK = Get-ImpressorasInstaladas
 
     foreach ($arq in $arquivos) {
         $caminho = $arq.FullName
@@ -115,15 +149,34 @@ while ($true) {
 
             if (-not (Test-Path $caminho)) { continue }
 
-            Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Imprimindo: $($arq.Name)" -ForegroundColor Yellow
+            # Decide qual impressora usar: prioridade → sufixo do arquivo → impressora.txt → padrao
+            $impDoArquivo = Get-ImpressoraDoArquivo $arq.Name
+            $impEscolhida = $null
+            if ($impDoArquivo) {
+                $impEscolhida = Resolve-NomeImpressora -NomeArquivo $impDoArquivo -Disponiveis $impressorasOK
+                if (-not $impEscolhida) {
+                    Write-Host "[$(Get-Date -Format 'HH:mm:ss')] AVISO: impressora '$impDoArquivo' (do arquivo) nao encontrada no Windows. Usando fallback." -ForegroundColor Yellow
+                }
+            }
+            if (-not $impEscolhida -and $Impressora) {
+                $impEscolhida = Resolve-NomeImpressora -NomeArquivo $Impressora -Disponiveis $impressorasOK
+                if (-not $impEscolhida) { $impEscolhida = $Impressora }
+            }
+
+            $alvo = if ($impEscolhida) { $impEscolhida } else { '(impressora padrao do sistema)' }
+            Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Imprimindo: $($arq.Name) -> $alvo" -ForegroundColor Yellow
 
             try {
-                if ($Impressora) {
-                    & $SumatraPath -print-to $Impressora -silent $caminho
+                if ($impEscolhida) {
+                    $proc = Start-Process -FilePath $SumatraPath -ArgumentList @('-print-to', $impEscolhida, '-silent', $caminho) -NoNewWindow -PassThru -Wait
                 } else {
-                    & $SumatraPath -print-to-default -silent $caminho
+                    $proc = Start-Process -FilePath $SumatraPath -ArgumentList @('-print-to-default', '-silent', $caminho) -NoNewWindow -PassThru -Wait
                 }
-                Write-Host "[$(Get-Date -Format 'HH:mm:ss')] OK: $($arq.Name)" -ForegroundColor Green
+                if ($proc.ExitCode -eq 0) {
+                    Write-Host "[$(Get-Date -Format 'HH:mm:ss')] OK: $($arq.Name)" -ForegroundColor Green
+                } else {
+                    Write-Host "[$(Get-Date -Format 'HH:mm:ss')] FALHA (exit=$($proc.ExitCode)): $($arq.Name)" -ForegroundColor Red
+                }
             } catch {
                 Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ERRO ao imprimir $($arq.Name): $_" -ForegroundColor Red
             }
