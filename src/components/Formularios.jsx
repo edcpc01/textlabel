@@ -1,4 +1,4 @@
-﻿// src/components/Formularios.jsx
+// src/components/Formularios.jsx
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -29,11 +29,12 @@ export async function gerarEImprimirFormularios(dados) {
   const col1Count = Math.min(metade, 36)
   const col2Count = Math.min(fusos - col1Count, 36)
 
-  const renderFusoRows = (start, count, totalAtivos) => {
-    return Array.from({ length: count }, (_, i) => {
+  // Sempre renderiza 36 linhas; mostra número se fuso está ativo, linha em branco se inativo
+  const renderFusoRows = (start, totalAtivos) => {
+    return Array.from({ length: 36 }, (_, i) => {
       const fusoNum = start + i
       const isAtivo = fusoNum <= totalAtivos
-      return `<tr class="${isAtivo ? 'ativo' : 'inativo'}" data-fuso="${fusoNum}"><td>${fusoNum}</td><td></td><td></td></tr>`
+      return `<tr class="${isAtivo ? 'ativo' : 'inativo'}" data-fuso="${fusoNum}"><td>${isAtivo ? fusoNum : ''}</td><td></td><td></td></tr>`
     }).join('')
   }
 
@@ -83,7 +84,7 @@ export async function gerarEImprimirFormularios(dados) {
     .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
     .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
     .cat:nth-child(4n) { border-right:none; }
-    .cat.ultima { border-bottom:none; }
+    .cat.ultima { border-bottom:1.5px solid #000; }
     .cat-tit { font-size:8pt; font-weight:700; text-transform:uppercase; text-align:center; padding:2mm; border-bottom:1px solid #000; background:#fafafa; }
     .celulas { display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
     .cel-def { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:9mm; }
@@ -124,11 +125,9 @@ export async function gerarEImprimirFormularios(dados) {
     .obs { border-bottom:1px solid #ccc; height:5.5mm; }
   `
 
-  // ── Grupos de fusos: col1 = fusos 1..36, col2 = fusos 37..72 (ou conforme totalFusos)
+  // ── Grupos de fusos: col1 = fusos 1..36, col2 = fusos 37..72 (sempre 36 linhas fixas)
   const fusoCol1Start = 1
-  const fusoCol1Rows  = Math.min(fusos, 36)
   const fusoCol2Start = 37
-  const fusoCol2Rows  = Math.max(0, Math.min(fusos - 36, 36))
 
   const pagesHtml = `
 <!-- PAGINA 1: FORMULARIO 1 — FRENTE -->
@@ -236,11 +235,11 @@ export async function gerarEImprimirFormularios(dados) {
     <div class="tabela-fusos">
       <table class="fusos">
         <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
-        <tbody>${renderFusoRows(fusoCol1Start, fusoCol1Rows, fusos)}</tbody>
+        <tbody>${renderFusoRows(fusoCol1Start, fusos)}</tbody>
       </table>
       <table class="fusos">
         <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
-        <tbody>${fusoCol2Rows > 0 ? renderFusoRows(fusoCol2Start, fusoCol2Rows, fusos) : ''}</tbody>
+        <tbody>${renderFusoRows(fusoCol2Start, fusos)}</tbody>
       </table>
     </div>
     <div class="rodape">
