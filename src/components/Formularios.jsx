@@ -81,13 +81,13 @@ export async function gerarEImprimirFormularios(dados) {
     /* ── VERSO (DEFEITOS) ── */
     .verso { margin-top:0; }
     .titulo-verso { text-align:center; font-size:16pt; font-weight:900; text-transform:uppercase; margin-bottom:2mm; }
-    .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; overflow:hidden; }
+    .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden; }
     .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
     .cat:nth-child(4n) { border-right:none; }
     .cat.ultima { border-bottom:none; }
     .cat-tit { font-size:8pt; font-weight:700; text-transform:uppercase; text-align:center; padding:2mm; border-bottom:1px solid #000; background:#fafafa; }
     .celulas { display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
-    .cel-def { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:9mm; }
+    .cel-def { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:7mm; }
     .cel-def:nth-child(4n) { border-right:none; }
     .instrucao { display:flex; align-items:center; justify-content:center; text-align:center; font-size:9pt; font-weight:700; padding:4mm; line-height:1.6; background:#f5f5f5; }
     .tab-rod { width:100%; border-collapse:collapse; margin-top:4mm; }
