@@ -81,10 +81,10 @@ export async function gerarEImprimirFormularios(dados) {
     /* ── VERSO (DEFEITOS) ── */
     .verso { margin-top:0; }
     .titulo-verso { text-align:center; font-size:16pt; font-weight:900; text-transform:uppercase; margin-bottom:4mm; }
-    .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
+    .grade { border:1.5px solid #000; display:grid; grid-template-columns:repeat(4,1fr); flex:1; overflow:hidden; }
     .cat { border-right:1.5px solid #000; border-bottom:1.5px solid #000; display:flex; flex-direction:column; }
     .cat:nth-child(4n) { border-right:none; }
-    .cat.ultima { border-bottom:1.5px solid #000; }
+    .cat.ultima { border-bottom:none; }
     .cat-tit { font-size:8pt; font-weight:700; text-transform:uppercase; text-align:center; padding:2mm; border-bottom:1px solid #000; background:#fafafa; }
     .celulas { display:grid; grid-template-columns:repeat(4,1fr); flex:1; }
     .cel-def { border-right:1px dashed #ccc; border-bottom:1px dashed #ccc; min-height:9mm; }
@@ -111,7 +111,7 @@ export async function gerarEImprimirFormularios(dados) {
     .tabela-fusos { display:grid; grid-template-columns:1fr 1fr; gap:3mm; flex:1; }
     table.fusos { width:100%; border-collapse:collapse; }
     table.fusos th { background:#222; color:#fff; padding:2mm 2.5mm; text-align:center; border:1px solid #000; font-size:9pt; font-weight:700; }
-    table.fusos td { border:1px solid #000; padding:0 2.5mm; height:6.8mm; text-align:center; vertical-align:middle; font-size:9pt; }
+    table.fusos td { border:1px solid #000; padding:0 1mm; height:5mm; text-align:center; vertical-align:middle; font-size:8pt; }
     table.fusos td:first-child { font-weight:700; background:#f5f5f5; width:13mm; }
     table.fusos tr.inativo td { background:#f0f0f0; color:#ccc; }
     .rodape { display:grid; grid-template-columns:50px 55px 1fr 1fr 1fr 1fr; gap:0; border:1px solid #000; }
