@@ -307,6 +307,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const approxModules = 35 + 11 * String(barcode).length
   const bW = Math.max(1, Math.floor((504 - 2 * mX - 2) / approxModules))
+  const bcEnd = mX + bW * approxModules
 
   let barcodeZPL = ''
   for (let i = 0; i <= 2; i++) {
@@ -318,10 +319,11 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   const xDate  = 504 - mX - wRight - 15
   const wCode  = xDate - mX - 5
 
-  // Linha 2: esq = desc + máquina | dir = composição (130 dots)
+  // Linha 2: esq = desc + máquina | dir = composição
+  // Alinha o final da composição com o final do barcode (evita corte físico)
   const wL2r = 130
-  const wL2l = W - wL2r
-  const xL2r = mX + wL2l
+  const xL2r = Math.max(mX, bcEnd - wL2r)
+  const wL2l = xL2r - mX
 
   return `^XA
 ^MMT
@@ -345,11 +347,13 @@ ${renderField(mX, yBcText, W, fBc, barcode, 'C')}
 ^XZ`
 }
 
-export function buildZPLNilitCiclo(baseRecord, config, barcodes, totalFusos, layout = {}) {
+export function buildZPLNilitCiclo(baseRecord, config, barcodes, totalFusos, layout = {}, labelEntries = null) {
   const zpls = []
   for (let fuso = totalFusos; fuso >= 1; fuso--) {
+    const entry = labelEntries ? labelEntries[fuso - 1] : null
     zpls.push(buildZPLNilit({
       ...baseRecord,
+      ...(entry || {}),
       fuso,
       barcode: (barcodes && barcodes[fuso - 1]) || 'B000000000',
     }, config, layout))

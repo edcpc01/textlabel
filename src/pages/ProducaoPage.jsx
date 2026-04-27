@@ -168,7 +168,7 @@ export function ProducaoPage() {
 
       let zplAll
       if (isNilit) {
-        zplAll = buildZPLNilitCiclo({ ...form, ciclo, lv: lvEmitido, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos, layoutNilit)
+        zplAll = buildZPLNilitCiclo({ ...form, ciclo, lv: lvEmitido, emissaoHora, operador: operadorCode }, zplConfigNilit, barcodes, nFusos, layoutNilit, labelEntries)
       } else {
         zplAll = buildZPLCiclo({ ...form, ciclo }, zplConfig, nFusos, layout, labelEntries)
       }
