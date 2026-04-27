@@ -2,8 +2,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Download, Printer, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { onEmissoes, onMaquinas, onProdutos } from '../lib/firebase'
-import { buildZPLCiclo, printZPL } from '../lib/zpl'
+import { onEmissoes, onMaquinas, onProdutos, getEtiquetasPorEmissao, getImpressoraNilit, getEmpresa, getLayout, getLayoutNilit } from '../lib/firebase'
+import { buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
 
 function fmtTs(ts) {
   if (!ts) return '—'
@@ -65,13 +65,50 @@ export function RelatorioPage() {
     toast.success('CSV exportado!')
   }
 
-  function reimprimir(e) {
+  async function reimprimir(e) {
     const maq = maquinas.find(m => m.cod === e.maquina)
     const fusos = parseInt(e.totalFusos || maq?.fusos || 1)
-    if (!confirm(`Reimprimir ciclo ${String(e.ciclo).padStart(3,'0')} — ${fusos} etiquetas?`)) return
-    const zpl = buildZPLCiclo({ ...e, ciclo: e.ciclo }, {}, fusos)
-    printZPL(zpl, `C${String(e.ciclo).padStart(3,'0')}_${e.maquina}_${e.lote}.zpl`)
-    toast.success(`Reimpressão: ${fusos} etiquetas enviadas!`)
+    const sufixo = e.lv ? ` · LV ${e.lv}` : ''
+    if (!confirm(`Reimprimir ciclo ${String(e.ciclo).padStart(3,'0')}${sufixo} — ${fusos} etiquetas?`)) return
+
+    const isNilit = (e.empresa || '').toLowerCase().includes('nilit')
+
+    try {
+      // Reconstrói labelEntries a partir das etiquetas salvas — preserva descricao por fuso (S/Z) e barcodes
+      const etiquetas = await getEtiquetasPorEmissao(e.id)
+      const labelEntries = etiquetas.length
+        ? etiquetas.map(et => ({ ...e, ...et, ciclo: e.ciclo, fuso: et.fuso }))
+        : null
+
+      let zpl, filename = `C${String(e.ciclo).padStart(3,'0')}_${e.maquina}_${e.lote}.zpl`
+      if (isNilit) {
+        const [configNilit, layoutNilit] = await Promise.all([getImpressoraNilit(), getLayoutNilit()])
+        const barcodes = Array.from({ length: fusos }, (_, i) => {
+          const eti = etiquetas.find(x => Number(x.fuso) === i + 1)
+          return eti?.barcode || 'B000000000'
+        })
+        const baseRecord = {
+          ...e,
+          ciclo: e.ciclo,
+          lv: e.lv || 'A',
+          emissaoHora: e.emissaoHora || '',
+          operador: e.operador || '',
+        }
+        zpl = buildZPLNilitCiclo(baseRecord, {
+          vel: configNilit.vel ?? 3, dens: configNilit.dens ?? 15, offx: configNilit.offx ?? 0,
+        }, barcodes, fusos, layoutNilit, labelEntries)
+      } else {
+        const [empresa, layout] = await Promise.all([getEmpresa(), getLayout()])
+        zpl = buildZPLCiclo({ ...e, ciclo: e.ciclo }, {
+          vel: empresa.vel ?? 3, dens: empresa.dens ?? 15, offx: empresa.offx ?? -24,
+        }, fusos, layout, labelEntries)
+      }
+
+      await printZPL(zpl, filename)
+      toast.success(`Reimpressão: ${fusos} etiquetas enviadas!`)
+    } catch (err) {
+      toast.error('Erro ao reimprimir: ' + (err?.message || err))
+    }
   }
 
   function toggleExpand(id) { setExpanded(p => ({ ...p, [id]: !p[id] })) }

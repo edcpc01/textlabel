@@ -161,7 +161,15 @@ export function ProducaoPage() {
         let fusoNum = 1
         for (const group of groups) {
           for (let i = 0; i < group.count; i++) {
-            labelEntries.push({ ...form, ciclo, fuso: fusoNum++, descricao: group.descricao })
+            labelEntries.push({
+              ...form,
+              ciclo,
+              fuso: fusoNum++,
+              descricao: group.descricao,
+              lv: lvEmitido,
+              emissaoHora,
+              operador: operadorCode,
+            })
           }
         }
       }
@@ -419,6 +427,8 @@ export function ProducaoPage() {
                   fuso: 1,
                   ciclo: cicloPreview || 1,
                   descricao: labelGroups[0]?.descricao ?? form.descricao,
+                  lv: isNilit ? lvPreviewNilit : form.lv,
+                  operador: operadorCode,
                 }}
                 layout={layout} isNilit={isNilit} layoutNilit={layoutNilit}
               />

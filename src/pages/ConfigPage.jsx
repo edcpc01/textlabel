@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { Save, AlertTriangle, RefreshCw, Bold } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
-  getEmpresa, setEmpresa, onCiclos, setCicloManualLoteMaq,
+  getEmpresa, setEmpresa, onCiclos, setCicloManualLoteMaq, setLvNilitManualLoteMaq,
+  NILIT_LV_ALPHABET,
   getLayout, setLayout,
   getImpressoraNilit, setImpressoraNilit,
   getLayoutNilit, setLayoutNilit,
@@ -78,6 +79,7 @@ export function ConfigPage() {
   const [printerNilit, setPrinterNilit]   = useState({ vel: '3', dens: '15', offx: '0' })
   const [ciclos,  setCiclos]              = useState([])
   const [editando, setEditando]           = useState(null)
+  const [editandoLv, setEditandoLv]       = useState(null)
   const [loading, setLoading]             = useState(false)
   const [layout, setLayoutLocal]          = useState(LAYOUT_DEFAULT)
   const [layoutNilit, setLayoutNilitLocal] = useState(LAYOUT_NILIT_DEFAULT)
@@ -157,6 +159,18 @@ export function ConfigPage() {
     await setCicloManualLoteMaq(editando.lote, editando.maquina, v, editando.produto)
     setEditando(null)
     toast.success('Ciclo atualizado!')
+  }
+
+  async function salvarLvManual() {
+    if (!editandoLv) return
+    const lv = String(editandoLv.lv || '').toUpperCase()
+    if (!NILIT_LV_ALPHABET.includes(lv)) { toast.error('LV inválido.'); return }
+    if (!confirm(`Definir próximo LV de ${editandoLv.maquina} / ${editandoLv.lote} para ${lv}?`)) return
+    try {
+      await setLvNilitManualLoteMaq(editandoLv.lote, editandoLv.maquina, lv, editandoLv.produto)
+      setEditandoLv(null)
+      toast.success('LV atualizado!')
+    } catch (e) { toast.error('Erro: ' + e.message) }
   }
 
   const previewRecord = {
@@ -386,9 +400,12 @@ export function ConfigPage() {
           {ciclos.length > 0 && (
             <div className="table-wrap">
               <table>
-                <thead><tr><th>LOTE</th><th>MÁQUINA</th><th className="td-center">PRÓXIMO CICLO</th><th /></tr></thead>
+                <thead><tr><th>LOTE</th><th>MÁQUINA</th><th className="td-center">PRÓXIMO CICLO</th><th className="td-center">PRÓXIMO LV (NILIT)</th><th /></tr></thead>
                 <tbody>
-                  {ciclos.map(c => (
+                  {ciclos.map(c => {
+                    const isNilitCiclo = Number.isInteger(c.lvIndex)
+                    const lvAtual = isNilitCiclo ? (NILIT_LV_ALPHABET[c.lvIndex] || 'A') : '—'
+                    return (
                     <tr key={c.id}>
                       <td><span className="badge badge-orange">{c.lote}</span></td>
                       <td><span className="badge badge-gray">{c.maquina}</span></td>
@@ -408,14 +425,40 @@ export function ConfigPage() {
                           </strong>
                         )}
                       </td>
+                      <td className="td-center">
+                        {!isNilitCiclo ? (
+                          <span style={{ color: 'var(--muted)', fontSize: '.78rem' }}>—</span>
+                        ) : editandoLv?.id === c.id ? (
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                            <select className="form-control"
+                              style={{ width: 70, padding: '4px 8px', fontSize: '.8rem' }}
+                              value={editandoLv.lv}
+                              onChange={e => setEditandoLv(p => ({ ...p, lv: e.target.value }))}>
+                              {NILIT_LV_ALPHABET.map(lv => <option key={lv} value={lv}>{lv}</option>)}
+                            </select>
+                            <button className="btn btn-primary btn-sm" onClick={salvarLvManual}>✓</button>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setEditandoLv(null)}>✕</button>
+                          </div>
+                        ) : (
+                          <strong style={{ color: 'var(--green)', fontSize: '1.05rem' }}>{lvAtual}</strong>
+                        )}
+                      </td>
                       <td>
-                        <button className="btn btn-ghost btn-sm"
-                          onClick={() => setEditando({ id: c.id, lote: c.lote, maquina: c.maquina, valor: c.valor })}>
-                          <AlertTriangle size={12} /> Ajustar
-                        </button>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-ghost btn-sm"
+                            onClick={() => setEditando({ id: c.id, lote: c.lote, maquina: c.maquina, produto: c.produto, valor: c.valor })}>
+                            <AlertTriangle size={12} /> Ciclo
+                          </button>
+                          {isNilitCiclo && (
+                            <button className="btn btn-ghost btn-sm"
+                              onClick={() => setEditandoLv({ id: c.id, lote: c.lote, maquina: c.maquina, produto: c.produto, lv: lvAtual })}>
+                              <AlertTriangle size={12} /> LV
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

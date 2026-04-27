@@ -2,7 +2,7 @@
 import { initializeApp } from 'firebase/app'
 import {
   getFirestore, collection, doc, addDoc, updateDoc,
-  deleteDoc, getDoc, onSnapshot, query, orderBy,
+  deleteDoc, getDoc, onSnapshot, query, orderBy, where, getDocs,
   writeBatch, serverTimestamp, runTransaction, setDoc,
 } from 'firebase/firestore'
 import {
@@ -141,6 +141,20 @@ export async function setCicloManualLoteMaq(lote, maquina, valor, produto) {
   }
 }
 
+export const NILIT_LV_ALPHABET = NILIT_LV_SEQ
+
+export async function setLvNilitManualLoteMaq(lote, maquina, lv, produto) {
+  const ref = doc(db, 'ciclos', cicloDocId(lote, maquina, produto))
+  const idx = NILIT_LV_SEQ.indexOf(String(lv || '').toUpperCase())
+  if (idx < 0) throw new Error(`LV inválido: ${lv}`)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    await updateDoc(ref, { lvIndex: idx, atualizadoEm: serverTimestamp() })
+  } else {
+    await setDoc(ref, { lote, maquina, produto: produto || '', valor: 1, lvIndex: idx, atualizadoEm: serverTimestamp() })
+  }
+}
+
 export function onCiclos(cb) {
   return onSnapshot(collection(db, 'ciclos'), snap =>
     cb(snap.docs.map(d => ({ id: d.id, ...d.data() })))
@@ -243,6 +257,15 @@ export function onEmissoes(cb) {
 export function onEtiquetas(cb) {
   const q = query(collection(db, 'etiquetas'), orderBy('criadoEm', 'desc'))
   return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+}
+
+export async function getEtiquetasPorEmissao(emissaoId) {
+  if (!emissaoId) return []
+  const q = query(collection(db, 'etiquetas'), where('emissaoId', '==', emissaoId))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => Number(a.fuso) - Number(b.fuso))
 }
 
 // ─── PRODUTOS ──────────────────────────────────────────
