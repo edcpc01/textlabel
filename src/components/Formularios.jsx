@@ -134,7 +134,16 @@ export async function gerarEImprimirFormularios(dados) {
   const fusoCol1Start = 1
   const fusoCol2Start = 37
 
+  const imprimirForm1 = dados.imprimirForm1 !== false
+  const imprimirForm2 = dados.imprimirForm2 !== false
+  if (!imprimirForm1 && !imprimirForm2) return
+
+  const isNilit = (emp || '').toLowerCase().includes('nilit')
+  const headerBarra = isNilit ? '10R' : 'BARRA'
+  const headerTmt = isNilit ? '38' : 'TMT'
+
   const pagesHtml = `
+${imprimirForm1 ? `
 <!-- PAGINA 1: FORMULARIO 1 — FRENTE -->
 <div class="page">
   <div class="f1">
@@ -233,7 +242,9 @@ export async function gerarEImprimirFormularios(dados) {
     <div class="rod-info">Qualidade\\padronização\\tietê\\formulários\\FO 02 038- Defeitos de Escolha Visual (folha verso)</div>
   </div>
 </div>
+` : ''}
 
+${imprimirForm2 ? `
 <!-- PAGINA 3: FORMULARIO 2 — CLASSIFICAÇÃO VISUAL DE AFINIDADE TINTORIAL -->
 <div class="page">
   <div class="f2">
@@ -253,11 +264,11 @@ export async function gerarEImprimirFormularios(dados) {
     </div>
     <div class="tabela-fusos">
       <table class="fusos">
-        <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
+        <thead><tr><th>FUSO</th><th>${headerBarra}</th><th>${headerTmt}</th></tr></thead>
         <tbody>${renderFusoRows(fusoCol1Start, fusos)}</tbody>
       </table>
       <table class="fusos">
-        <thead><tr><th>FUSO</th><th>BARRA</th><th>TMT</th></tr></thead>
+        <thead><tr><th>FUSO</th><th>${headerBarra}</th><th>${headerTmt}</th></tr></thead>
         <tbody>${renderFusoRows(fusoCol2Start, fusos)}</tbody>
       </table>
     </div>
@@ -279,6 +290,7 @@ export async function gerarEImprimirFormularios(dados) {
     </div>
   </div>
 </div>
+` : ''}
 `
 
   const container = document.createElement('div')

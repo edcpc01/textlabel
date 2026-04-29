@@ -34,6 +34,8 @@ export function ProducaoPage() {
   const [loading, setLoading]           = useState(false)
   const [layout, setLayoutData]         = useState(LAYOUT_DEFAULT)
   const [layoutNilit, setLayoutNilit]   = useState(LAYOUT_NILIT_DEFAULT)
+  const [imprimirForm1, setImprimirForm1] = useState(true)
+  const [imprimirForm2, setImprimirForm2] = useState(true)
   const isNilit = (form.empresa || '').toLowerCase().includes('nilit')
 
   useEffect(() => {
@@ -184,7 +186,7 @@ export function ProducaoPage() {
       const filename = `C${String(ciclo).padStart(3,'0')}_${form.maquina}_${form.lote}.zpl`
       await printZPL(zplAll, filename)
 
-      if (!isNilit) {
+      if (imprimirForm1 || imprimirForm2) {
         const baseFormulario = {
           maquina:    form.maquina,
           lote:       form.lote,
@@ -195,6 +197,8 @@ export function ProducaoPage() {
           cnpj:       form.cnpj,
           data:       form.data,
           impressoraRede: configImpressora.impressoraRede,
+          imprimirForm1,
+          imprimirForm2,
         }
 
         // Para 1 ou 3 cabos em máquina RPR: gera um kit PDF por grupo (S e Z)
@@ -385,17 +389,32 @@ export function ProducaoPage() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '20px', marginTop: 18, marginBottom: 12, padding: '0 4px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '.85rem', cursor: 'pointer', color: 'var(--text)' }}>
+                  <input type="checkbox" checked={imprimirForm1} onChange={e => setImprimirForm1(e.target.checked)} />
+                  Placa de Ciclo (Formulário 1)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '.85rem', cursor: 'pointer', color: 'var(--text)' }}>
+                  <input type="checkbox" checked={imprimirForm2} onChange={e => setImprimirForm2(e.target.checked)} />
+                  Classificação AFT (Formulário 2)
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button className="btn btn-primary" onClick={emitir} disabled={loading}>
                   <Printer size={15} />
                   {loading ? 'Emitindo...' : `Emitir Ciclo${effectiveFusos ? ` (${effectiveFusos} etiquetas)` : ''}`}
                 </button>
-                {!isNilit && ultimosFormularios.length > 0 && (
+                {ultimosFormularios.length > 0 && (
                   <button
                     className="btn btn-ghost btn-sm"
                     onClick={() => {
                       ultimosFormularios.reduce(
-                        (p, f) => p.then(() => gerarEImprimirFormularios(f)),
+                        (p, f) => p.then(() => gerarEImprimirFormularios({
+                          ...f,
+                          imprimirForm1,
+                          imprimirForm2,
+                        })),
                         Promise.resolve()
                       )
                       toast.success(
