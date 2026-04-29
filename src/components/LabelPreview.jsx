@@ -66,12 +66,24 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   // Dados com fallbacks seguros
   const r = record || {}
-  const code1   = `${String(r.opacidade||'').toUpperCase().slice(0,2).padEnd(2,' ')}0${String(r.lote||'').replace(/\D/g,'').slice(0,4).padStart(4,'0')}`
+
+  let descRaw = String(r.descricao || '')
+  let torcaoStr = ''
+  const regex = /(^|\s)"?(S|Z)"?(?=\s|$)/i
+  const tMatch = descRaw.match(regex)
+  if (tMatch) {
+    torcaoStr = tMatch[2].toUpperCase()
+    descRaw = descRaw.replace(regex, ' ').replace(/\s+/g, ' ').trim()
+  }
+
+  const baseCode = `${String(r.opacidade||'').toUpperCase().slice(0,2).padEnd(2,' ')}0${String(r.lote||'').replace(/\D/g,'').slice(0,4).padStart(4,'0')}`
+  const code1    = torcaoStr ? `${baseCode} ${torcaoStr}` : baseCode
+
   const dataFmt = r.data ? r.data.split('-').reverse().join('/') : '--/--/--'
   const horaFmt = r.emissaoHora || '--:--'
   const opCode  = `6200${String(r.operador || r.op || '0001').slice(0,4).padStart(4,'0')}`
   // L2: descrição + máquina (esq) | composição (dir)
-  const descMaq = `${String(r.descricao||'').slice(0,22)} ${String(r.maquina||'').slice(0,8)}`
+  const descMaq = `${descRaw.slice(0,22)} ${String(r.maquina||'').slice(0,8)}`
   const compFmt = String(r.composicao||'').slice(0,8)
 
   const fCode = pfH(L.fontCode)

@@ -286,11 +286,21 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   const W = 504 - 2 * mX
 
+  let descRaw = String(descricao || '')
+  let torcaoStr = ''
+  const regex = /(^|\\s)"?(S|Z)"?(?=\\s|$)/i
+  const tMatch = descRaw.match(regex)
+  if (tMatch) {
+    torcaoStr = tMatch[2].toUpperCase()
+    descRaw = descRaw.replace(regex, ' ').replace(/\\s+/g, ' ').trim()
+  }
+
   const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
-  const code1   = `${opacity2}0${lote4d(lote)}`
+  const baseCode = `${opacity2}0${lote4d(lote)}`
+  const code1   = torcaoStr ? `${baseCode} ${torcaoStr}` : baseCode
   const dateFmt = data ? data.split('-').reverse().join('/') : ''
   const hora    = emissaoHora || ''
-  const desc    = String(descricao || '').slice(0, 22)
+  const desc    = descRaw.slice(0, 22)
   const comp    = String(composicao || '').slice(0, 8)
   const maqFull = String(maquina || '').slice(0, 8)
   const op      = String(operador || '').slice(0, 4).padStart(4, '0')
