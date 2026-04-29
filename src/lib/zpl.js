@@ -323,7 +323,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   // Bloco direito (data + hora + op): largura = 10 × fDate.w
   const wRight = 10 * fDate.w
   const xDate  = 504 - mX - wRight - 15
-  const wCode  = xDate - mX - 5
+  const wCode  = xDate - mX + 50
 
   // Linha 2: esq = desc + máquina | dir = composição
   // Alinha o final da composição com o final do barcode (evita corte físico)

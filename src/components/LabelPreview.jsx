@@ -103,7 +103,7 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
     }}>
       {/* L1: código | data + hora + operador */}
       <div style={{ display: 'flex', justifyContent: 'space-between', paddingRight: pD(15) }}>
-        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, textShadow: fCode.bold ? '1px 1px 0px black' : 'none' }}>{code1}</div>
+        <div style={{ fontSize: fCode.size, fontWeight: fCode.bold ? 900 : 700, textShadow: fCode.bold ? '1px 1px 0px black' : 'none', whiteSpace: 'nowrap' }}>{code1}</div>
         <div style={{ textAlign: 'center', minWidth: pD(120) }}>
           <div style={{ fontSize: fDate.size, fontWeight: 700 }}>{dataFmt}</div>
           <div style={{ fontSize: fDate.size, fontWeight: 700 }}>{horaFmt}</div>
