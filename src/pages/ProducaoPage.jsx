@@ -160,8 +160,8 @@ export function ProducaoPage() {
       if (effectiveCabos) {
         const groups = computeLabelGroups(effectiveCabos, totalFusos, form.descricao)
         labelEntries = []
-        let fusoNum = 1
         for (const group of groups) {
+          let fusoNum = 1
           for (let i = 0; i < group.count; i++) {
             labelEntries.push({
               ...form,

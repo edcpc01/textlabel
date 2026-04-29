@@ -360,7 +360,7 @@ export function buildZPLNilitCiclo(baseRecord, config, barcodes, totalFusos, lay
     zpls.push(buildZPLNilit({
       ...baseRecord,
       ...(entry || {}),
-      fuso,
+      fuso: entry && entry.fuso ? entry.fuso : fuso,
       barcode: (barcodes && barcodes[fuso - 1]) || 'B000000000',
     }, config, layout))
   }
