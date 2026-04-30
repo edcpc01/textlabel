@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Download, Printer, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { onEmissoes, onMaquinas, onProdutos, getEtiquetasPorEmissao, getImpressoraNilit, getEmpresa, getLayout, getLayoutNilit } from '../lib/firebase'
-import { buildZPLCiclo, buildZPLNilitCiclo, printZPL } from '../lib/zpl'
+import { buildZPLCiclo, buildZPLNilitCiclo, printZPL, computeLabelGroups } from '../lib/zpl'
 
 function fmtTs(ts) {
   if (!ts) return '—'
@@ -22,6 +22,7 @@ export function RelatorioPage() {
   const [produtos,  setProdutos]  = useState([])
   const [expanded,  setExpanded]  = useState({})
   const [filtros, setFiltros] = useState({ de: '', ate: '', maquina: '', produto: '', lote: '' })
+  const [selectedFusos, setSelectedFusos] = useState({})
 
   useEffect(() => {
     const u1 = onEmissoes(setEmissoes)
@@ -65,6 +66,39 @@ export function RelatorioPage() {
     toast.success('CSV exportado!')
   }
 
+  function rebuildLabelEntries(e, etiquetas) {
+    const fusos = parseInt(e.totalFusos || 1)
+    let baseEntries = Array.from({ length: fusos }, (_, i) => {
+      const eti = etiquetas.find(x => Number(x.fuso) === i + 1)
+      return { ...e, ...eti, ciclo: e.ciclo, fuso: i + 1 }
+    })
+
+    const maq = maquinas.find(m => m.cod === e.maquina)
+    const isRPR = maq?.desc?.toUpperCase().includes('RPR TEXTRIZADORA') || (e.maquina || '').toUpperCase().includes('RPR TEXTRIZADORA')
+    const effectiveCabos = isRPR ? (e.cabos || '1') : ''
+
+    if (effectiveCabos) {
+      const groups = computeLabelGroups(effectiveCabos, fusos, e.descricao)
+      let newEntries = []
+      let physFuso = 1
+      for (const group of groups) {
+        let fusoNum = 1
+        for (let i = 0; i < group.count; i++) {
+          const baseEntry = baseEntries.find(x => x.fuso === physFuso) || { ...e, ciclo: e.ciclo, fuso: physFuso }
+          newEntries.push({
+            ...baseEntry,
+            fuso: fusoNum++,
+            descricao: group.descricao,
+            torcao: group.torcao,
+          })
+          physFuso++
+        }
+      }
+      baseEntries = newEntries
+    }
+    return baseEntries
+  }
+
   async function reimprimir(e) {
     const maq = maquinas.find(m => m.cod === e.maquina)
     const fusos = parseInt(e.totalFusos || maq?.fusos || 1)
@@ -74,19 +108,13 @@ export function RelatorioPage() {
     const isNilit = (e.empresa || '').toLowerCase().includes('nilit')
 
     try {
-      // Reconstrói labelEntries a partir das etiquetas salvas — preserva descricao por fuso (S/Z) e barcodes
       const etiquetas = await getEtiquetasPorEmissao(e.id)
-      const labelEntries = etiquetas.length
-        ? etiquetas.map(et => ({ ...e, ...et, ciclo: e.ciclo, fuso: et.fuso }))
-        : null
+      const labelEntries = rebuildLabelEntries(e, etiquetas)
 
       let zpl, filename = `C${String(e.ciclo).padStart(3,'0')}_${e.maquina}_${e.lote}.zpl`
       if (isNilit) {
         const [configNilit, layoutNilit] = await Promise.all([getImpressoraNilit(), getLayoutNilit()])
-        const barcodes = Array.from({ length: fusos }, (_, i) => {
-          const eti = etiquetas.find(x => Number(x.fuso) === i + 1)
-          return eti?.barcode || 'B000000000'
-        })
+        const barcodes = labelEntries.map(entry => entry.barcode || 'B000000000')
         const baseRecord = {
           ...e,
           ciclo: e.ciclo,
@@ -111,37 +139,58 @@ export function RelatorioPage() {
     }
   }
 
-  async function reimprimirFuso(e, fusoNum) {
+  async function reimprimirSelecionados(e) {
+    const selected = selectedFusos[e.id] || []
+    if (selected.length === 0) return
+
     const isNilit = (e.empresa || '').toLowerCase().includes('nilit')
-    const fusoStr = String(fusoNum).padStart(2, '0')
-    if (!confirm(`Reimprimir etiqueta do fuso F${fusoStr}?`)) return
+    const totalToPrint = selected.length
+    if (!confirm(`Reimprimir ${totalToPrint} etiqueta(s) selecionada(s)?`)) return
 
     try {
       const etiquetas = await getEtiquetasPorEmissao(e.id)
-      const eti = etiquetas.find(x => Number(x.fuso) === fusoNum)
-      
-      const labelEntries = [{ ...e, ...eti, ciclo: e.ciclo, fuso: fusoNum }]
-      
-      let zpl, filename = `C${String(e.ciclo).padStart(3,'0')}_F${fusoStr}_${e.maquina}.zpl`
-      
+      const baseEntries = rebuildLabelEntries(e, etiquetas)
+      const labelEntries = selected.map(f => baseEntries[f - 1]).filter(Boolean)
+
+      let zpl, filename = `C${String(e.ciclo).padStart(3,'0')}_PARCIAL_${e.maquina}.zpl`
+
       if (isNilit) {
         const [configNilit, layoutNilit] = await Promise.all([getImpressoraNilit(), getLayoutNilit()])
-        const barcodes = [eti?.barcode || 'B000000000']
-        zpl = buildZPLNilitCiclo({ ...e, lv: e.lv || 'A' }, {
+        const barcodes = labelEntries.map(entry => entry.barcode || 'B000000000')
+        const baseRecord = {
+          ...e,
+          ciclo: e.ciclo,
+          lv: e.lv || 'A',
+          emissaoHora: e.emissaoHora || '',
+          operador: e.operador || '',
+        }
+        zpl = buildZPLNilitCiclo(baseRecord, {
           vel: configNilit.vel ?? 3, dens: configNilit.dens ?? 15, offx: configNilit.offx ?? 0,
-        }, barcodes, 1, layoutNilit, labelEntries)
+        }, barcodes, totalToPrint, layoutNilit, labelEntries)
       } else {
         const [empresa, layout] = await Promise.all([getEmpresa(), getLayout()])
         zpl = buildZPLCiclo({ ...e, ciclo: e.ciclo }, {
           vel: empresa.vel ?? 3, dens: empresa.dens ?? 15, offx: empresa.offx ?? -24,
-        }, 1, layout, labelEntries)
+        }, totalToPrint, layout, labelEntries)
       }
 
       await printZPL(zpl, filename)
-      toast.success(`Etiqueta F${fusoStr} enviada para impressão!`)
+      toast.success(`Etiqueta(s) selecionada(s) enviada(s) para impressão!`)
+      setSelectedFusos(prev => ({ ...prev, [e.id]: [] }))
     } catch (err) {
-      toast.error('Erro ao reimprimir fuso: ' + (err?.message || err))
+      toast.error('Erro ao reimprimir fusos: ' + (err?.message || err))
     }
+  }
+
+  function toggleFusoSelection(cycleId, fusoNum) {
+    setSelectedFusos(prev => {
+      const current = prev[cycleId] || []
+      if (current.includes(fusoNum)) {
+        return { ...prev, [cycleId]: current.filter(f => f !== fusoNum) }
+      } else {
+        return { ...prev, [cycleId]: [...current, fusoNum] }
+      }
+    })
   }
 
   function toggleExpand(id) { setExpanded(p => ({ ...p, [id]: !p[id] })) }
@@ -294,22 +343,33 @@ export function RelatorioPage() {
                     <tr key={`${e.id}-fusos`}>
                       <td colSpan="10" style={{ background: 'var(--surface)', padding: '12px 24px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {Array.from({ length: e.totalFusos }, (_, i) => i + 1).map(f => (
-                            <button
-                              key={f}
-                              className="badge badge-gray btn-fuso"
-                              style={{ minWidth: 36, justifyContent: 'center', cursor: 'pointer', border: 'none' }}
-                              onClick={() => reimprimirFuso(e, f)}
-                              title={`Clique para reimprimir apenas o fuso ${f}`}
-                            >
-                              F{f}
-                            </button>
-                          ))}
+                          {Array.from({ length: e.totalFusos }, (_, i) => i + 1).map(f => {
+                            const isSelected = (selectedFusos[e.id] || []).includes(f)
+                            return (
+                              <button
+                                key={f}
+                                className={`badge btn-fuso ${isSelected ? 'badge-blue' : 'badge-gray'}`}
+                                style={{ minWidth: 36, justifyContent: 'center', cursor: 'pointer', border: 'none' }}
+                                onClick={() => toggleFusoSelection(e.id, f)}
+                                title={`Clique para selecionar o fuso ${f}`}
+                              >
+                                F{f}
+                              </button>
+                            )
+                          })}
                         </div>
-                        <div style={{ marginTop: 8, fontSize: '.72rem', color: 'var(--muted)' }}>
-                          Comp.: {e.composicao || '—'} &nbsp;·&nbsp;
-                          Título: {e.titulo || '—'} Dtex &nbsp;·&nbsp;
-                          Data fab.: {e.data || '—'}
+                        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ fontSize: '.72rem', color: 'var(--muted)' }}>
+                            Comp.: {e.composicao || '—'} &nbsp;·&nbsp;
+                            Título: {e.titulo || '—'} Dtex &nbsp;·&nbsp;
+                            Data fab.: {e.data || '—'} &nbsp;·&nbsp;
+                            LV: {e.lv || '—'}
+                          </div>
+                          {(selectedFusos[e.id] || []).length > 0 && (
+                            <button className="btn btn-primary btn-sm" onClick={() => reimprimirSelecionados(e)}>
+                              <Printer size={13} /> Reimprimir {(selectedFusos[e.id] || []).length} selecionado(s)
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
