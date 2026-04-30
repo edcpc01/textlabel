@@ -287,6 +287,7 @@ export function RelatorioPage() {
               <tr>
                 <th style={{ width: 32 }} />
                 <th>CICLO</th>
+                <th>LV</th>
                 <th>DATA / HORA</th>
                 <th>LOTE</th>
                 <th>MÁQUINA</th>
@@ -308,6 +309,7 @@ export function RelatorioPage() {
                       {expanded[e.id] ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                     </td>
                     <td><span className="badge badge-blue td-mono">{String(e.ciclo).padStart(3,'0')}</span></td>
+                    <td><span className="badge badge-gray td-bold" style={{ padding: '4px 8px' }}>{e.lv || 'A'}</span></td>
                     <td style={{ fontSize: '.75rem', whiteSpace: 'nowrap', color: 'var(--text2)' }}>{fmtTs(e.criadoEm)}</td>
                     <td><span className="badge badge-orange">{e.lote}</span></td>
                     <td><span className="badge badge-gray">{e.maquina}</span></td>
@@ -339,41 +341,79 @@ export function RelatorioPage() {
                     </td>
                   </tr>
 
-                  {expanded[e.id] && (
-                    <tr key={`${e.id}-fusos`}>
-                      <td colSpan="10" style={{ background: 'var(--surface)', padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {Array.from({ length: e.totalFusos }, (_, i) => i + 1).map(f => {
-                            const isSelected = (selectedFusos[e.id] || []).includes(f)
-                            return (
-                              <button
-                                key={f}
-                                className={`badge btn-fuso ${isSelected ? 'badge-blue' : 'badge-gray'}`}
-                                style={{ minWidth: 36, justifyContent: 'center', cursor: 'pointer', border: 'none' }}
-                                onClick={() => toggleFusoSelection(e.id, f)}
-                                title={`Clique para selecionar o fuso ${f}`}
-                              >
-                                F{f}
-                              </button>
-                            )
-                          })}
-                        </div>
-                        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: '.72rem', color: 'var(--muted)' }}>
-                            Comp.: {e.composicao || '—'} &nbsp;·&nbsp;
-                            Título: {e.titulo || '—'} Dtex &nbsp;·&nbsp;
-                            Data fab.: {e.data || '—'} &nbsp;·&nbsp;
-                            LV: {e.lv || '—'}
+                  {expanded[e.id] && (() => {
+                    const maq = maquinas.find(m => m.cod === e.maquina)
+                    const isRPR = maq?.desc?.toUpperCase().includes('RPR TEXTRIZADORA') || (e.maquina || '').toUpperCase().includes('RPR TEXTRIZADORA')
+                    const effectiveCabos = isRPR ? (e.cabos || '1') : ''
+
+                    let fusoGroups = []
+                    if (effectiveCabos) {
+                      const groups = computeLabelGroups(effectiveCabos, e.totalFusos, e.descricao)
+                      let physFuso = 1
+                      for (const group of groups) {
+                         let fusosInGroup = []
+                         let fusoNum = 1
+                         for (let i = 0; i < group.count; i++) {
+                            fusosInGroup.push({ physFuso: physFuso, printFuso: fusoNum, torcao: group.torcao })
+                            physFuso++
+                            fusoNum++
+                         }
+                         fusoGroups.push({ torcao: group.torcao, fusos: fusosInGroup })
+                      }
+                    } else {
+                      let fusosInGroup = []
+                      for (let i = 1; i <= e.totalFusos; i++) {
+                        fusosInGroup.push({ physFuso: i, printFuso: i, torcao: '' })
+                      }
+                      fusoGroups.push({ torcao: '', fusos: fusosInGroup })
+                    }
+
+                    return (
+                      <tr key={`${e.id}-fusos`}>
+                        <td colSpan="11" style={{ background: 'var(--surface)', padding: '12px 24px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {fusoGroups.map((group, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                {group.torcao && (
+                                  <div style={{ padding: '6px 0', fontWeight: 'bold', color: 'var(--accent)', minWidth: 32 }}>
+                                    {group.torcao} =
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
+                                  {group.fusos.map(f => {
+                                    const isSelected = (selectedFusos[e.id] || []).includes(f.physFuso)
+                                    return (
+                                      <button
+                                        key={f.physFuso}
+                                        className={`badge btn-fuso ${isSelected ? 'badge-blue' : 'badge-gray'}`}
+                                        style={{ minWidth: 36, justifyContent: 'center', cursor: 'pointer', border: 'none' }}
+                                        onClick={() => toggleFusoSelection(e.id, f.physFuso)}
+                                        title={`Clique para selecionar o fuso ${f.printFuso} físico ${f.physFuso}`}
+                                      >
+                                        F{f.printFuso}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          {(selectedFusos[e.id] || []).length > 0 && (
-                            <button className="btn btn-primary btn-sm" onClick={() => reimprimirSelecionados(e)}>
-                              <Printer size={13} /> Reimprimir {(selectedFusos[e.id] || []).length} selecionado(s)
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                            <div style={{ fontSize: '.72rem', color: 'var(--muted)' }}>
+                              Comp.: {e.composicao || '—'} &nbsp;·&nbsp;
+                              Título: {e.titulo || '—'} Dtex &nbsp;·&nbsp;
+                              Data fab.: {e.data || '—'}
+                            </div>
+                            {(selectedFusos[e.id] || []).length > 0 && (
+                              <button className="btn btn-primary btn-sm" onClick={() => reimprimirSelecionados(e)}>
+                                <Printer size={13} /> Reimprimir {(selectedFusos[e.id] || []).length} selecionado(s)
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })()}
                 </>
               ))}
             </tbody>
