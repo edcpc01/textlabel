@@ -386,11 +386,13 @@ export function ProducaoPage() {
                   <input className="form-control" type="text" placeholder="100% PES"
                     value={form.composicao} onChange={e => setForm(f => ({ ...f, composicao: e.target.value }))} />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Título (Dtex)</label>
-                  <input className="form-control" type="text" placeholder="230"
-                    value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
-                </div>
+                {!isNilit && (
+                  <div className="form-group">
+                    <label className="form-label">Título (Dtex)</label>
+                    <input className="form-control" type="text" placeholder="230"
+                      value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
+                  </div>
+                )}
                 <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="form-label">Descrição do Produto</label>
                   <input className="form-control" type="text"
