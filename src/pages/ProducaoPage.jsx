@@ -16,7 +16,7 @@ const EMPTY = {
   data: new Date().toISOString().split('T')[0],
   composicao: '', descricao: '', titulo: '', empresa: '', cnpj: '',
   opacidade: '', cabos: '',
-  po: '', lv: 'A',
+  po: '', poZ: '', lv: 'A',
 }
 
 const RPR_DESC = 'RPR TEXTRIZADORA CONV. SINGLE'
@@ -92,6 +92,7 @@ export function ProducaoPage() {
   const isRPR = (maqObj?.desc || '').toUpperCase().includes(RPR_DESC)
   const cabos = form.cabos || ''
   const effectiveCabos = isRPR && ['1','2','3'].includes(cabos) ? cabos : ''
+  const hasTorcaoGroups = ['1','3'].includes(effectiveCabos)
 
   const labelGroups    = totalFusos > 0 ? computeLabelGroups(effectiveCabos, totalFusos, form.descricao) : []
   const effectiveFusos = labelGroups.reduce((s, g) => s + g.count, 0)
@@ -136,7 +137,10 @@ export function ProducaoPage() {
     if (!form.descricao)  erros.push('Descrição')
     if (!totalFusos)      erros.push('Máquina sem Nº de Fusos cadastrado')
     if (!effectiveFusos)  erros.push('Nº de fusos insuficiente para a qtde. de cabos selecionada')
-    if (isNilit && !form.po) erros.push('Ordem de Produção (PO)')
+    if (isNilit) {
+      if (!form.po) erros.push(hasTorcaoGroups ? 'Ordem Produção Nilit S' : 'Ordem Produção Nilit')
+      if (hasTorcaoGroups && !form.poZ) erros.push('Ordem Produção Nilit Z')
+    }
     if (erros.length) { toast.error(`Obrigatório: ${erros.join(', ')}`); return }
 
     setLoading(true)
@@ -162,6 +166,7 @@ export function ProducaoPage() {
         labelEntries = []
         for (const group of groups) {
           let fusoNum = 1
+          const groupPO = group.torcao === 'Z' && form.poZ ? form.poZ : form.po
           for (let i = 0; i < group.count; i++) {
             labelEntries.push({
               ...form,
@@ -169,6 +174,7 @@ export function ProducaoPage() {
               fuso: fusoNum++,
               descricao: group.descricao,
               lv: lvEmitido,
+              po: groupPO,
               emissaoHora,
               operador: operadorCode,
             })
@@ -202,7 +208,6 @@ export function ProducaoPage() {
         }
 
         // Para 1 ou 3 cabos em máquina RPR: gera um kit PDF por grupo (S e Z)
-        const hasTorcaoGroups = ['1','3'].includes(effectiveCabos)
         let formularios
         if (hasTorcaoGroups) {
           const groups = computeLabelGroups(effectiveCabos, totalFusos, form.descricao)
@@ -339,11 +344,26 @@ export function ProducaoPage() {
                 </div>
                 {isNilit && (
                   <>
-                    <div className="form-group">
-                      <label className="form-label">Ordem de Produção <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>Nilit</span></label>
-                      <input className="form-control" type="text" placeholder="Ex: 620680"
-                        value={form.po} onChange={e => setForm(f => ({ ...f, po: e.target.value }))} />
-                    </div>
+                    {hasTorcaoGroups ? (
+                      <>
+                        <div className="form-group">
+                          <label className="form-label">Ordem de Produção <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>Nilit S</span></label>
+                          <input className="form-control" type="text" placeholder="Ex: 620680"
+                            value={form.po} onChange={e => setForm(f => ({ ...f, po: e.target.value }))} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Ordem de Produção <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>Nilit Z</span></label>
+                          <input className="form-control" type="text" placeholder="Ex: 620681"
+                            value={form.poZ} onChange={e => setForm(f => ({ ...f, poZ: e.target.value }))} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="form-group">
+                        <label className="form-label">Ordem de Produção <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>Nilit</span></label>
+                        <input className="form-control" type="text" placeholder="Ex: 620680"
+                          value={form.po} onChange={e => setForm(f => ({ ...f, po: e.target.value }))} />
+                      </div>
+                    )}
                     <div className="form-group">
                       <label className="form-label">Carga LV <span style={{ color: 'var(--accent)', fontSize: '.75em' }}>automática</span></label>
                       <input className="form-control" type="text" readOnly value={lvPreviewNilit}

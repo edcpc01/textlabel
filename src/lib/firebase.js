@@ -183,7 +183,7 @@ export async function emitirCiclo({
   lote, maquina, maquinaFusos, produto, descricao,
   composicao, titulo, data, empresa, cnpj,
   empresaNome, userEmail, userName,
-  po = '', operador = '', lv = 'A', opacidade = '', emissaoHora = '',
+  po = '', poZ = '', operador = '', lv = 'A', opacidade = '', emissaoHora = '',
   cabos = 'N/A',
 }) {
   const isNilit = (empresa || '').toLowerCase().includes('nilit')
@@ -216,7 +216,7 @@ export async function emitirCiclo({
   const cicloRef = await addDoc(collection(db, 'emissoes'), {
     ciclo, lote, maquina, produto, descricao, composicao,
     titulo, data, totalFusos, empresa, cnpj, empresaNome,
-    po, operador, lv: lvFinal, opacidade, emissaoHora, cabos,
+    po, poZ, operador, lv: lvFinal, opacidade, emissaoHora, cabos,
     userEmail: userEmail || '',
     userName:  userName  || '',
     criadoEm: ts,
@@ -225,13 +225,14 @@ export async function emitirCiclo({
   const batch = writeBatch(db)
   let fusoGlobal = 1
   for (const group of labelGroups) {
+    const groupPO = group.torcao === 'Z' && poZ ? poZ : po
     for (let i = 0; i < group.count; i++) {
       const fuso = fusoGlobal++
       batch.set(doc(collection(db, 'etiquetas')), {
         ciclo, lote, maquina, fuso, produto,
         descricao: group.descricao,
         composicao, titulo, data, empresa, cnpj, empresaNome,
-        po, operador, lv: lvFinal, opacidade, emissaoHora,
+        po: groupPO, operador, lv: lvFinal, opacidade, emissaoHora,
         barcode: getBarcodeForFuso(fuso),
         userEmail: userEmail || '',
         userName:  userName  || '',

@@ -83,6 +83,7 @@ export function RelatorioPage() {
       let physFuso = 1
       for (const group of groups) {
         let fusoNum = 1
+        const groupPO = group.torcao === 'Z' && e.poZ ? e.poZ : e.po
         for (let i = 0; i < group.count; i++) {
           const baseEntry = baseEntries.find(x => x.fuso === physFuso) || { ...e, ciclo: e.ciclo, fuso: physFuso }
           newEntries.push({
@@ -90,6 +91,7 @@ export function RelatorioPage() {
             fuso: fusoNum++,
             descricao: group.descricao,
             torcao: group.torcao,
+            po: baseEntry.po || groupPO,
           })
           physFuso++
         }
