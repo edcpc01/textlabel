@@ -16,8 +16,10 @@ export async function gerarEImprimirFormularios(dados) {
   const emp = dados.empresa || ''
   const imp = dados.impressoraRede || ''
   const fusos = Number(dados.totalFusos) || 96
-  // Código completo: máquina + ciclo com 5 dígitos (ex: TF07B00001)
   const maqCiclo = `${maquina}${String(valCiclo).padStart(5, '0')}`
+  const isNilit = (emp || '').toLowerCase().includes('nilit')
+  const lv = dados.lv || 'A'
+  const codigoFinal = isNilit ? `${maqCiclo}${lv}` : maqCiclo
 
   const torcao = (() => {
     const match = (desc || '').match(/\b(SO|SZ|S\/Z|Z\/S|S|Z)\b/i)
@@ -62,8 +64,8 @@ export async function gerarEImprimirFormularios(dados) {
     .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4mm; }
     .ciclo-box { border:3px solid #000; padding:5mm 6mm; display:flex; justify-content:space-between; align-items:center; }
     .ciclo-box .esq .label { font-size:10pt; font-weight:700; margin-bottom:2mm; }
-    .ciclo-box .esq .num  { font-size:52pt; font-weight:900; letter-spacing:1px; line-height:1; }
-    .barcode { border:1.5px dashed #999; width:50mm; height:22mm; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#aaa; text-align:center; }
+    .ciclo-box .esq .num  { font-size:42pt; font-weight:900; letter-spacing:1px; line-height:1; }
+    .qrcode-box { border:1.5px dashed #999; width:26mm; height:26mm; display:flex; align-items:center; justify-content:center; }
     .checklist { border:1.5px solid #000; }
     .cl-header { background:#333; color:#fff; font-size:8.5pt; font-weight:700; text-transform:uppercase; padding:2mm 4mm; }
     .cl-body { display:grid; grid-template-columns:repeat(5,1fr); }
@@ -107,7 +109,7 @@ export async function gerarEImprimirFormularios(dados) {
     .titulo-form { font-size:13pt; font-weight:900; text-transform:uppercase; text-align:center; flex:1; letter-spacing:.3px; }
     .dados-box { display:grid; gap:0; border:1px solid #000; }
     .dl1 { grid-template-columns:1fr 2fr 1fr 1fr; }
-    .dl2 { grid-template-columns:1fr 1fr; border:1px solid #000; margin-top:2mm; }
+    .dl2 { grid-template-columns:1fr 1fr 2fr; border:1px solid #000; margin-top:2mm; }
     .cel { border-right:1px solid #000; padding:1.5mm 2.5mm; display:flex; flex-direction:column; }
     .cel:last-child { border-right:none; }
     .cel label { font-size:7pt; font-weight:700; color:#444; margin-bottom:.4mm; }
@@ -138,7 +140,6 @@ export async function gerarEImprimirFormularios(dados) {
   const imprimirForm2 = dados.imprimirForm2 !== false
   if (!imprimirForm1 && !imprimirForm2) return
 
-  const isNilit = (emp || '').toLowerCase().includes('nilit')
   const headerBarra = isNilit ? '10R' : 'BARRA'
   const headerTmt = isNilit ? '38' : 'TMT'
 
@@ -159,10 +160,10 @@ ${imprimirForm1 ? `
     <div class="ciclo-box">
       <div class="esq">
         <div class="label">Ciclo:</div>
-        <div class="num">${maqCiclo}</div>
+        <div class="num">${codigoFinal}</div>
       </div>
-      <div class="barcode">
-        [código de barras]<br>* ${maqCiclo} *
+      <div class="qrcode-box">
+        <img src="https://quickchart.io/qr?text=${encodeURIComponent(codigoFinal)}&size=150&margin=0" style="width:23mm; height:23mm;" />
       </div>
     </div>
     <div class="grid3">
@@ -259,7 +260,8 @@ ${imprimirForm2 ? `
       <div class="cel"><label>Lote</label><div class="v">${lote}</div></div>
     </div>
     <div class="dados-box dl2">
-      <div class="cel"><label>DataHoraCiclo</label><div class="v">&nbsp;</div></div>
+      <div class="cel"><label>DataHora</label><div class="v">&nbsp;</div></div>
+      <div class="cel"><label>Ciclo</label><div class="v">&nbsp;</div></div>
       <div class="cel"><label>Obs.</label><div class="v">&nbsp;</div></div>
     </div>
     <div class="tabela-fusos">
@@ -299,14 +301,15 @@ ${imprimirForm2 ? `
   document.body.appendChild(container)
 
   try {
-    // Aguarda o logo Doptex carregar
-    const img = container.querySelector('img.logo-doptex')
-    await new Promise(res => {
-      if (!img || img.complete) return setTimeout(res, 200)
+    // Aguarda todas as imagens carregarem
+    const imgs = Array.from(container.querySelectorAll('img'))
+    await Promise.all(imgs.map(img => new Promise(res => {
+      if (img.complete) return res()
       img.onload = res
       img.onerror = res
       setTimeout(res, 5000)
-    })
+    })))
+    await new Promise(res => setTimeout(res, 200))
 
     const pages = container.querySelectorAll('.page')
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })

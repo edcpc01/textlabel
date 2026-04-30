@@ -202,6 +202,7 @@ export function ProducaoPage() {
           empresa:    form.empresa,
           cnpj:       form.cnpj,
           data:       form.data,
+          lv:         lvEmitido,
           impressoraRede: configImpressora.impressoraRede,
           imprimirForm1,
           imprimirForm2,
