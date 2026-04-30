@@ -142,6 +142,7 @@ export async function gerarEImprimirFormularios(dados) {
 
   const headerBarra = isNilit ? '10R' : 'BARRA'
   const headerTmt = isNilit ? '38' : 'TMT'
+  const dataHoraAtual = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
   const pagesHtml = `
 ${imprimirForm1 ? `
@@ -260,8 +261,8 @@ ${imprimirForm2 ? `
       <div class="cel"><label>Lote</label><div class="v">${lote}</div></div>
     </div>
     <div class="dados-box dl2">
-      <div class="cel"><label>DataHora</label><div class="v">&nbsp;</div></div>
-      <div class="cel"><label>Ciclo</label><div class="v">&nbsp;</div></div>
+      <div class="cel"><label>DataHora</label><div class="v" style="font-size:10pt;">${dataHoraAtual}</div></div>
+      <div class="cel"><label>Ciclo</label><div class="v" style="font-size:10pt;">${codigoFinal}</div></div>
       <div class="cel"><label>Obs.</label><div class="v">&nbsp;</div></div>
     </div>
     <div class="tabela-fusos">

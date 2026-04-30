@@ -161,15 +161,15 @@ export function computeLabelGroups(cabos, totalFusos, descricao) {
   const sixth = Math.floor(totalFusos / 6)
   switch (String(cabos)) {
     case '1': return [
-      { count: half,        descricao: (descricao || '') + ' "S"' },
-      { count: half,        descricao: (descricao || '') + ' "Z"' },
+      { count: half,        descricao: (descricao || '') + ' "S"', torcao: 'S' },
+      { count: half,        descricao: (descricao || '') + ' "Z"', torcao: 'Z' },
     ]
     case '2': return [
       { count: half,        descricao: descricao || '' },
     ]
     case '3': return [
-      { count: sixth,       descricao: (descricao || '') + ' "S"' },
-      { count: sixth,       descricao: (descricao || '') + ' "Z"' },
+      { count: sixth,       descricao: (descricao || '') + ' "S"', torcao: 'S' },
+      { count: sixth,       descricao: (descricao || '') + ' "Z"', torcao: 'Z' },
     ]
     default:  return [
       { count: totalFusos,  descricao: descricao || '' },
