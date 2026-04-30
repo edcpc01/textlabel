@@ -69,10 +69,10 @@ function CelulaEtiquetaNilit({ record, layout = {} }) {
 
   let descRaw = String(r.descricao || '')
   let torcaoStr = ''
-  const regex = /(^|\s)"?(S|Z)"?(?=\s|$)/i
-  const tMatch = descRaw.match(regex)
-  if (tMatch) {
-    torcaoStr = tMatch[2].toUpperCase()
+  const regex = /(^|\s)"?(S|Z)"?(?=\s|$)/gi
+  const matches = [...descRaw.matchAll(regex)]
+  if (matches.length > 0) {
+    torcaoStr = matches[matches.length - 1][2].toUpperCase()
     descRaw = descRaw.replace(regex, ' ').replace(/\s+/g, ' ').trim()
   }
 

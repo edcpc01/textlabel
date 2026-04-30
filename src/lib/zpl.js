@@ -288,11 +288,11 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
 
   let descRaw = String(descricao || '')
   let torcaoStr = ''
-  const regex = /(^|\\s)"?(S|Z)"?(?=\\s|$)/i
-  const tMatch = descRaw.match(regex)
-  if (tMatch) {
-    torcaoStr = tMatch[2].toUpperCase()
-    descRaw = descRaw.replace(regex, ' ').replace(/\\s+/g, ' ').trim()
+  const regex = /(^|\s)"?(S|Z)"?(?=\s|$)/gi
+  const matches = [...descRaw.matchAll(regex)]
+  if (matches.length > 0) {
+    torcaoStr = matches[matches.length - 1][2].toUpperCase()
+    descRaw = descRaw.replace(regex, ' ').replace(/\s+/g, ' ').trim()
   }
 
   const opacity2 = String(opacidade).toUpperCase().slice(0, 2).padEnd(2, ' ')
@@ -323,7 +323,7 @@ export function buildZPLNilit(record, config = {}, layout = {}) {
   // Bloco direito (data + hora + op): largura = 10 × fDate.w
   const wRight = 10 * fDate.w
   const xDate  = 504 - mX - wRight - 15
-  const wCode  = xDate - mX + 50
+  const wCode  = 400
 
   // Linha 2: esq = desc + máquina | dir = composição
   // Alinha o final da composição com o final do barcode (evita corte físico)
