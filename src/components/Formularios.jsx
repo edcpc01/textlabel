@@ -327,10 +327,34 @@ ${imprimirForm2 ? `
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297)
     }
 
-    const timestamp = Date.now()
-    const sfx = imp ? `__${imp.replace(/[<>:"/\\|?*]/g, '_')}` : ''
-    const filename = `F${cicloStr}_${maquina}_${lote}_${timestamp}${sfx}.pdf`
-    pdf.save(filename)
+    // Impressão silenciosa via iframe oculto (sem abrir PDF nem janela extra)
+    const blob = pdf.output('blob')
+    const blobUrl = URL.createObjectURL(blob)
+
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:1px;height:1px;border:none;'
+    iframe.src = blobUrl
+    document.body.appendChild(iframe)
+
+    await new Promise((resolve, reject) => {
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow.focus()
+          iframe.contentWindow.print()
+          resolve()
+        } catch (e) {
+          reject(e)
+        }
+      }
+      iframe.onerror = reject
+      setTimeout(resolve, 8000) // segurança: libera após 8s mesmo sem onload
+    })
+
+    // Remove iframe e libera memória após breve delay (aguarda diálogo de impressão abrir)
+    setTimeout(() => {
+      document.body.removeChild(iframe)
+      URL.revokeObjectURL(blobUrl)
+    }, 2000)
   } finally {
     document.body.removeChild(container)
   }

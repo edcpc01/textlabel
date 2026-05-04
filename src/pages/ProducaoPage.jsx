@@ -218,17 +218,17 @@ export function ProducaoPage() {
         }
 
         setUltimosFormularios(formularios)
-        // Gera PDFs em sequência para evitar conflito de download
+        // Imprime formulários em sequência para evitar conflito
         formularios.reduce(
           (p, f) => p.then(() => gerarEImprimirFormularios(f)),
           Promise.resolve()
-        ).catch(err => toast.error('Erro ao gerar PDF: ' + err.message))
+        ).catch(err => toast.error('Erro ao imprimir formulário: ' + err.message))
 
         toast(
           hasTorcaoGroups
-            ? `Gerando ${formularios.length} PDFs de formulário ("S" e "Z")…`
-            : 'Gerando PDF do formulário…',
-          { icon: '📄' }
+            ? `Enviando ${formularios.length} formulários para impressão ("S" e "Z")…`
+            : 'Enviando formulário para impressão…',
+          { icon: '🖨️' }
         )
       }
 
@@ -442,8 +442,8 @@ export function ProducaoPage() {
                       )
                       toast.success(
                         ultimosFormularios.length > 1
-                          ? `${ultimosFormularios.length} formulários reenviados.`
-                          : 'Formulário reenviado para download.'
+                          ? `${ultimosFormularios.length} formulários enviados para impressão.`
+                          : 'Formulário enviado para impressão.'
                       )
                     }}
                   >
